@@ -2,38 +2,29 @@
 // Created by Daniel Coburn on 9/27/24.
 //
 
-#ifndef NEW_BOARD_24_25_SENSOR_H
-#define NEW_BOARD_24_25_SENSOR_H
+#pragma once
 
-#include <optional>
+#include "services/Time.h"
 
-/*
-Data = ptr + len_in_bytes
-TimestampedData = timestamp + Data
-Sensor:
-    optional<Data> update()
-    TimestampedData poll()
- */
-
-struct Data {
-    void* pointer;
-    std::size_t len;
-};
-
-struct TimestampedData {
-    Data data;
-    long timestamp;
-};
+#include <stdlib.h>
 
 class Sensor {
 
+private:
+    Time* time;
+    long lastTimeRead;
+    long pollingPeriod;
+
 protected:
-    Data data;
-    int lastTimeRead;
+    virtual void* poll() = 0;
 
 public:
-    virtual std::optional<Data> update() = 0;
-    virtual TimestampedData read();
-};
 
-#endif //NEW_BOARD_24_25_SENSOR_H
+    Sensor(Time* time, long pollingPeriod);
+
+    void* update();
+    long getLastTimeRead();
+
+    virtual size_t sensorDataBytes() const = 0;
+
+};

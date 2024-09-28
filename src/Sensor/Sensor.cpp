@@ -4,9 +4,19 @@
 
 #include "Sensor.h"
 
-TimestampedData Sensor::read() {
-    return TimestampedData {
-            .data = this->data,
-            .timestamp = this->lastTimeRead
-    };
+Sensor::Sensor(Time* time, long pollingPeriod):
+    time(time),
+    pollingPeriod(pollingPeriod),
+    lastTimeRead(time->millis())
+{}
+
+void* Sensor::update() {
+
+    long now = time->millis();
+    if (now - lastTimeRead >= pollingPeriod) {
+        lastTimeRead = now;
+        return poll();
+    }
+
+    return nullptr;
 }
