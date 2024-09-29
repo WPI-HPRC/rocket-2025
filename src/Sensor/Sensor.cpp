@@ -20,3 +20,7 @@ void* Sensor::update() {
 
     return nullptr;
 }
+
+long Sensor::getLastTimeRead() {
+    return lastTimeRead;
+}

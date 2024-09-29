@@ -1,8 +1,15 @@
 #include "Rocket/Rocket.h"
+#include <Arduino.h>
 
 
-#include <iostream>
 #include <cstring>
+
+Rocket::Rocket(Time *time) : time(time) {
+    sensors = Sensors {
+        .s1 = new ExampleSensor(time, 5000),
+        .s2 = new ExampleSensor(time, 1000),
+    };
+}
 
 void Rocket::iterate() {
 
@@ -12,12 +19,13 @@ void Rocket::iterate() {
         void* data = sensorArray[i]->update();
 
         size_t dataSize = sensorArray[i]->sensorDataBytes();
-        char* buffer = new char[dataSize];
-        memcpy(buffer, data, dataSize);
+        if (data) {
+            char* buffer = new char[dataSize];
+            memcpy(buffer, data, dataSize);
 
-        if (data) std::cout << "Data" << i << ": " << buffer << std::endl;
+            Serial.printf("Data %d: %s @ %d\n", i, buffer, sensorArray[i]->getLastTimeRead());
 
-        delete[] buffer;
-
+            delete[] buffer;
+        }
     }
 }

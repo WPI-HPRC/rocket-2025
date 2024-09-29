@@ -12,6 +12,7 @@ struct ExampleData {
 };
 
 class ExampleSensor: public Sensor {
+    using Sensor::Sensor;
 
 private:
     ExampleData data;

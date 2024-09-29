@@ -27,4 +27,5 @@ public:
 
     virtual size_t sensorDataBytes() const = 0;
 
+    virtual ~Sensor() = default;
 };

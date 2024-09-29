@@ -9,5 +9,11 @@ void* ExampleSensor::poll() {
     data.a = rand();
     data.b = rand();
 
+    Serial.println("ExampleSensor poll");
+
     return &data;
+}
+
+size_t ExampleSensor::sensorDataBytes() const {
+    return sizeof(ExampleData);
 }
