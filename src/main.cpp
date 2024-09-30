@@ -1,7 +1,6 @@
-#include "Rocket/Rocket.h"
-#include "services/ArduinoTime.h"
-
 #include <Arduino.h>
+#include "services/ArduinoTime.h"
+#include "Rocket/Rocket.h"
 
 ArduinoTime timeService;
 Rocket rocket(&timeService);

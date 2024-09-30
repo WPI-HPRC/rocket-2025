@@ -1,31 +1,48 @@
 //
 // Created by Daniel Coburn on 9/27/24.
 //
-
 #pragma once
 
-#include "services/Time.h"
+#include <stddef.h>
+#include <stdint.h>
 
-#include <stdlib.h>
+template <long POLLING_PERIOD> struct Sensor {
+  long _lastTimeRead = 0;
 
-class Sensor {
+  constexpr long getPollingPeriod() { return POLLING_PERIOD; }
+};
 
-private:
-    Time* time;
-    long lastTimeRead;
-    long pollingPeriod;
+template <class... Ss> struct Sensors;
 
-protected:
-    virtual void* poll() = 0;
+template <class S, class... Ss> struct Sensors<S, Ss...> {
+  Sensors<Ss...> rest;
 
-public:
+  S mySensor;
+  inline size_t update(uint8_t *includedSensors, long now, uint8_t *buf, size_t maxLen, size_t index = 0) {
+    size_t n = 0;
+    if (now - mySensor._lastTimeRead >= mySensor.getPollingPeriod()) {
+      typename S::Data data = mySensor.poll();
 
-    Sensor(Time* time, long pollingPeriod);
+      mySensor._lastTimeRead += mySensor.getPollingPeriod();
 
-    void* update();
-    long getLastTimeRead();
+      *(typename S::Data *)buf = data;
 
-    virtual size_t sensorDataBytes() const = 0;
+      size_t dataSize = sizeof(typename S::Data);
 
-    virtual ~Sensor() = default;
+      n = dataSize;
+      *includedSensors |= 1 << index;
+    }
+
+    return n + rest.update(includedSensors, now, buf + n, maxLen - n, index + 1);
+  }
+
+  constexpr size_t largestBufferSize() const {
+    return sizeof(typename S::Data) + rest.largestBufferSize();
+  }
+};
+
+template <> struct Sensors<> {
+  constexpr size_t update(uint8_t *includedSensors, long now, uint8_t *buf, size_t maxLen, size_t index) { return 0; }
+
+  constexpr size_t largestBufferSize() const { return 0; }
 };
