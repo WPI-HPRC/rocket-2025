@@ -5,13 +5,19 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "Sensor/ExampleSensor.h"
 #include "Sensor/Sensor.h"
+#include "Sensor/ExampleSensor.h"
 #include "services/Time.h"
+
+#define SENSORS(X)                                                             \
+  X(ExampleSensor, s1, 1000)                                                   \
+  X(ExampleSensor, s2, 5000)
+
+CREATE_SENSORS(SENSORS)
 
 struct Rocket {
 
-  Sensors<ExampleSensor<1000>, ExampleSensor<5000>> sensors;
+  Sensors sensors;
   Time *time;
 
   void iterate() {
