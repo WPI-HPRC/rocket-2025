@@ -11,6 +11,10 @@ struct Data {
   int b;
 };
 
+bool init() {
+  return true;
+}
+
 Data poll() {
   return Data{
       .a = rand(),

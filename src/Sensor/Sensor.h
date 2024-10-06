@@ -9,7 +9,7 @@
 #define FIELD(type, name, period) type##_##name name;
 #define UPDATE(type, name, period)                                             \
   if (now - name._lastTimeRead >= period) {                                    \
-    typename type::Data data = type::poll();                                   \
+    typename type::Data data = name.poll();                                    \
                                                                                \
     name._lastTimeRead += period;                                              \
                                                                                \
@@ -33,6 +33,7 @@
       return data;                                                             \
     }                                                                          \
   };
+#define INIT(type, name, period) ret &= type::init();
 
 #define CREATE_SENSORS(sensors)                                                \
   sensors(STRUCT);                                                             \
@@ -43,6 +44,12 @@
       size_t n = 0;                                                            \
       sensors(SIZE);                                                           \
       return n;                                                                \
+    }                                                                          \
+                                                                               \
+    bool init() {                                                              \
+      bool ret = true;                                                         \
+      sensors(INIT);                                                           \
+      return ret;                                                              \
     }                                                                          \
                                                                                \
     size_t update(uint8_t *includedSensors, long now, uint8_t *buf,            \
