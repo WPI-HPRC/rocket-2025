@@ -6,19 +6,20 @@
 #include <cstdlib>
 
 namespace ExampleSensor {
-struct Data {
-  int a;
-  int b;
-};
+    struct Data {
+        int a;
+        int b;
+    };
 
-struct Context {};
+    struct Context {
+    };
 
-bool init(Context *ctx) { return true; }
+    bool init(Context *ctx) { return true; }
 
-Data poll(Context *ctx) {
-  return Data{
-      .a = rand(),
-      .b = rand(),
-  };
-}
+    Data poll(Context *ctx) {
+        return Data{
+                .a = rand(),
+                .b = rand(),
+        };
+    }
 } // namespace ExampleSensor
