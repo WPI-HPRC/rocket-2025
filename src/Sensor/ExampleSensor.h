@@ -11,11 +11,11 @@ struct Data {
   int b;
 };
 
-bool init() {
-  return true;
-}
+struct Context {};
 
-Data poll() {
+bool init(Context *ctx) { return true; }
+
+Data poll(Context *ctx) {
   return Data{
       .a = rand(),
       .b = rand(),

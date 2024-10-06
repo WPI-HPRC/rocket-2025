@@ -7,9 +7,10 @@
 #include <stdint.h>
 
 #define FIELD(type, name, period) type##_##name name;
+#define CONTEXTS(type, name, period) typename type::Context name##_ctx;
 #define UPDATE(type, name, period)                                             \
   if (now - name._lastTimeRead >= period) {                                    \
-    typename type::Data data = name.poll();                                    \
+    typename type::Data data = name.poll(&name##_ctx);                         \
                                                                                \
     name._lastTimeRead += period;                                              \
                                                                                \
@@ -28,17 +29,18 @@
     long _lastTimeRead;                                                        \
     typename type::Data data;                                                  \
                                                                                \
-    typename type::Data poll() {                                               \
-      data = type::poll();                                                     \
+    typename type::Data poll(typename type::Context *ctx) {                    \
+      data = type::poll(ctx);                                                  \
       return data;                                                             \
     }                                                                          \
   };
-#define INIT(type, name, period) ret &= type::init();
+#define INIT(type, name, period) ret &= type::init(&name##_ctx);
 
 #define CREATE_SENSORS(sensors)                                                \
   sensors(STRUCT);                                                             \
   struct Sensors {                                                             \
     sensors(FIELD);                                                            \
+    sensors(CONTEXTS);                                                         \
                                                                                \
     constexpr size_t largestBufferSize() {                                     \
       size_t n = 0;                                                            \
