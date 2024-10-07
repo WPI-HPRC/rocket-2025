@@ -5,20 +5,21 @@
 #include "Accelerometer.h"
 #include <Wire.h>
 using namespace Accelerometer;
-const addr = 0x68;
+const int addr = 0x68;
 
 bool Accelerometer::init(Context *ctx) {
 
-    ctx->icm42688(Wire, addr)
+    ctx->icm42688(Wire, addr);
+    // no match for call to '(ICM42688) (TwoWire&, const int&)'
 
     if(ctx->icm42688.begin() != 1)
         return false;
 
     ctx->icm42688.setAccelFS(ICM42688::gpm16);
-    ctx->icm42688.setGyroFS(ICM42688:dps250);
+    ctx->icm42688.setGyroFS(ICM42688::dps250);
 
-    ctx->icm42688.setAccelODR(ICM42688:odr100);
-    ctx->icm42688.setGyroORD(ICM42688::ord100);
+    ctx->icm42688.setAccelODR(ICM42688::odr100);
+    ctx->icm42688.setGyroODR(ICM42688::odr100);
 
     return true;
 }
