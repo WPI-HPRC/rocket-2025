@@ -22,7 +22,7 @@ public:
 
     Sensor(Time* time, long pollingPeriod);
     
-    virtual bool init();
+    virtual bool init() = 0;
 
     void* update();
     long getLastTimeRead();

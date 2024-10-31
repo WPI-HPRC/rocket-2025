@@ -5,9 +5,9 @@
 #include <cstring>
 
 Rocket::Rocket(Time *time) : time(time) {
+
     sensors = Sensors {
-        .s1 = new ExampleSensor(time, 5000),
-        .s2 = new ExampleSensor(time, 1000),
+      .accelerometer = new Accelerometer(time, 5000),
     };
 }
 

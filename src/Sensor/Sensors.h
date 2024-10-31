@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Sensor/ExampleSensor.h"
+#include "Sensor/Accelerometer.h"
+// #include "Sensor/ExampleSensor.h"
 
 struct Sensors {
-    ExampleSensor* s1;
-    ExampleSensor* s2;
+    Accelerometer* accelerometer;
 };

@@ -6,6 +6,7 @@
 #include <Wire.h>
 
 bool Accelerometer::init() {
+  Serial.println("Accelerometer init!");
 
   if(icm42688.begin() != 1) return false;
 
@@ -15,6 +16,7 @@ bool Accelerometer::init() {
 
 
 void* Accelerometer::poll() {
+  Serial.println("Accelerometer poll!");
   icm42688.getAGT();
 
   data.accX = icm42688.accX();
@@ -23,6 +25,7 @@ void* Accelerometer::poll() {
   data.gyroX = icm42688.gyrX();
   data.gyroY = icm42688.gyrY();
   data.gyroZ = icm42688.gyrZ();
+
 }
 
 size_t Accelerometer::sensorDataBytes() const {
