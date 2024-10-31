@@ -17,6 +17,7 @@ struct Data {
 
 class Accelerometer: public Sensor {
     using Sensor::Sensor;
+    ICM42688 icm42688;
 
 private:
     Data data;
