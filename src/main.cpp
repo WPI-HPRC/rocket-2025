@@ -4,16 +4,19 @@
 #include <Arduino.h>
 
 ArduinoTime timeService;
-Rocket rocket(&timeService);
+//Rocket rocket(&timeService);
+
+// Something in Rocket is causing issues
 
 void setup() {
     Serial.begin(9600);
 
-    rocket.iterate();
+    //rocket.iterate();
 
 }
 
 void loop() {
-    rocket.iterate();
+    Serial.print("ajfdjfd");
+    //rocket.iterate();
     delay(5);
 }
