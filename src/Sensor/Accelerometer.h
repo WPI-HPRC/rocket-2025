@@ -3,24 +3,26 @@
 //
 
 #pragma once
-#include <ICM42688.h> // need to add
+#include <ICM42688.h> // need to add ??
 #include "Sensor.h"
 
-namespace Accelerometer {
+struct Data {
+    float accX;
+    float accY;
+    float accZ;
+    float gyroX;
+    float gyroY;
+    float gyroZ;
+};
 
-    struct Context {
-        ICM42688 icm42688;
-    };
+class Accelerometer: public Sensor {
+    using Sensor::Sensor;
 
-    struct Data {
-        float accX;
-        float accY;
-        float accZ;
-        float gyroX;
-        float gyroY;
-        float gyroZ;
-    };
+private:
+    Data data;
 
-    bool init(Context *ctx);
-    Data poll(Context *ctx);
-}
+protected:
+    void* poll() override;
+
+    size_t sensorDataBytes() const override;
+};
