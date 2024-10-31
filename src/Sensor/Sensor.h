@@ -21,11 +21,12 @@ protected:
 public:
 
     Sensor(Time* time, long pollingPeriod);
+    
+    virtual bool init();
 
     void* update();
     long getLastTimeRead();
 
     virtual size_t sensorDataBytes() const = 0;
-
     virtual ~Sensor() = default;
 };

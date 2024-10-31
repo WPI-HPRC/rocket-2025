@@ -6,6 +6,8 @@
 #include <ICM42688.h> // need to add ??
 #include "Sensor.h"
 
+const int addr = 0x68;
+
 struct Data {
     float accX;
     float accY;
@@ -17,13 +19,13 @@ struct Data {
 
 class Accelerometer: public Sensor {
     using Sensor::Sensor;
-    ICM42688 icm42688;
+    ICM42688 icm42688 = ICM42688(Wire, addr); /** is this sus? i dont know */
 
 private:
     Data data;
 
 protected:
+    bool init() override;
     void* poll() override;
-
     size_t sensorDataBytes() const override;
 };
