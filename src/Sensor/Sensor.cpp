@@ -2,25 +2,28 @@
 // Created by Daniel Coburn on 9/27/24.
 //
 
-#include "Sensor.h"
+// #include "Sensor.h"
 
-Sensor::Sensor(Time* time, long pollingPeriod):
-    time(time),
-    pollingPeriod(pollingPeriod),
-    lastTimeRead(time->millis())
-{}
+// #include "Arduino.h"
 
-void* Sensor::update() {
+// Sensor::Sensor(Time* time, long pollingPeriod):
+//     time(time),
+//     pollingPeriod(pollingPeriod),
+//     lastTimeRead(time->millis())
+// {}
 
-    long now = time->millis();
-    if (now - lastTimeRead >= pollingPeriod) {
-        lastTimeRead = now;
-        return poll();
-    }
+// void* Sensor::update() {
 
-    return nullptr;
-}
+//     long now = time->millis();
+//     if (now - lastTimeRead >= pollingPeriod) {
+//         // Serial.println("update");
+//         lastTimeRead = now;
+//         return poll();
+//     }
 
-long Sensor::getLastTimeRead() {
-    return lastTimeRead;
-}
+//     return nullptr;
+// }
+
+// long Sensor::getLastTimeRead() {
+//     return lastTimeRead;
+// }

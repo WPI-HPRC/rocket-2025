@@ -3,20 +3,23 @@
 
 #include <Arduino.h>
 
+#include <Wire.h>
+
 ArduinoTime timeService;
-//Rocket rocket(&timeService);
+Rocket rocket(&timeService);
 
 // Something in Rocket is causing issues
 
 void setup() {
     Serial.begin(9600);
 
-    //rocket.iterate();
+    Wire.begin(4000000);
+
+    rocket.init();
 
 }
 
 void loop() {
-    Serial.print("ajfdjfd");
-    //rocket.iterate();
+    rocket.iterate();
     delay(5);
 }

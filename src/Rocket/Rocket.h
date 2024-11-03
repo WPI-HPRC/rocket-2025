@@ -11,5 +11,6 @@ private:
 
 public:
     void iterate();
+    void init();
     Rocket(Time* time);
 };

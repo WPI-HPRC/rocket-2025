@@ -17,15 +17,13 @@ struct Data {
     float gyroZ;
 };
 
-class Accelerometer: public Sensor {
-    using Sensor::Sensor;
+class Accelerometer: public Sensor<Data> {
+public:
+    using Sensor<Data>::Sensor;
     ICM42688 icm42688 = ICM42688(Wire, addr); /** is this sus? i dont know */
-
-private:
-    Data data;
+    bool init() override;
 
 protected:
-    bool init() override;
-    void* poll() override;
+    Data poll() override;
     size_t sensorDataBytes() const override;
 };
