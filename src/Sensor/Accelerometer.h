@@ -26,9 +26,10 @@ public:
 
     bool init(Time *&, long);
 
+    Data data;
+
 private:
     ICM42688 icm42688;
-    Data data;
 
 protected:
     void* poll() override;
