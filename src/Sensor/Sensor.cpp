@@ -3,8 +3,10 @@
 //
 
 #include "Sensor.h"
-#include <Arduino.h>
 
+bool init(Time *&, long) {
+    return 0;
+} // is this gonna make it work? idk
 
 void* Sensor::update() {
     long now = time->millis();

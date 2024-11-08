@@ -33,6 +33,8 @@ void* Accelerometer::poll() {
     data.gyroX = icm42688.gyrX();
     data.gyroY = icm42688.gyrY();
     data.gyroZ = icm42688.gyrZ();
+
+    return &data;
 }
 
 size_t Accelerometer::sensorDataBytes() const {

@@ -20,7 +20,7 @@ protected:
 public:
     Sensor(Time* time, long pollingPeriod);
 
-    virtual bool init() = 0;
+    virtual bool init(Time *&, long) = 0;
 
     void* update();
     long getLastTimeRead();
