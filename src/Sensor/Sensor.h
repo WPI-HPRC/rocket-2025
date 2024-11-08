@@ -8,43 +8,41 @@
 
 #include <stdlib.h>
 
-template <class Data>
+//template <class Data>
 class Sensor {
 
-private:
-    Time* time;
+protected:
+    virtual void* poll() = 0;
     long lastTimeRead;
     long pollingPeriod;
-
-protected:
-    virtual Data poll() = 0;
+    Time* time;
 
 public:
+    Sensor(Time* time, long pollingPeriod);
 
-  Sensor(Time* time, long pollingPeriod):
+    virtual bool init() = 0;
+
+    void* update();
+    long getLastTimeRead();
+
+    virtual size_t sensorDataBytes() const = 0;
+    virtual ~Sensor() = default;
+    /*
+public:
+    void* update();
+    long getLastTimeRead();
+
+    Sensor(Time* time, long pollingPeriod):
     time(time),
     pollingPeriod(pollingPeriod),
     lastTimeRead(time->millis())
-  {}
+    {}
     
-   virtual bool init() = 0;
+    virtual bool init();
 
-   void *update() {
-      long now = time->millis();
-      if (now - lastTimeRead >= pollingPeriod) {
-          lastTimeRead = now;
-          data = poll();
-          return (void *)&data;
-      }
+    virtual size_t sensorDataBytes() const = 0;
+    virtual ~Sensor() = default;
 
-      return nullptr;
-   }
-   long getLastTimeRead() {
-      return lastTimeRead;
-   }
-
-   virtual size_t sensorDataBytes() const = 0;
-   virtual ~Sensor() = default;
-
-   Data data;
+    void* data; // what is this
+     */
 };

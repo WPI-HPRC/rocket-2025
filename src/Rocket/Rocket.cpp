@@ -1,7 +1,6 @@
 #include "Rocket/Rocket.h"
 #include <Arduino.h>
 
-
 #include <cstring>
 
 Rocket::Rocket(Time *time) : time(time) {
@@ -28,7 +27,7 @@ void Rocket::iterate() {
 
         size_t dataSize = sensorArray[i]->sensorDataBytes();
         if (data) {
-          // Serial.println(sensors.accelerometer->data.accX);
+            // Serial.println(sensors.accelerometer->data.accX);
             // Serial.print("accX: "); Serial.print(sensors.accelerometer->data.accX);
             // Serial.print(", accY: "); Serial.print(sensors.accelerometer->data.accY);
             // Serial.print(", accZ: "); Serial.print(sensors.accelerometer->data.accZ);
