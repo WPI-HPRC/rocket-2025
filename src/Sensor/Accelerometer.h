@@ -18,12 +18,16 @@ struct Data {
 };
 
 class Accelerometer: public Sensor {
+
 public:
-    using Sensor::Sensor;
-    ICM42688 icm42688 = ICM42688(Wire, addr); /** is this sus? i dont know */
+    Accelerometer(Time* timePtr, long pollingPeriod) :
+        Sensor(timePtr, pollingPeriod),
+        icm42688(Wire, addr) { }
+
     bool init(Time *&, long);
 
 private:
+    ICM42688 icm42688;
     Data data;
 
 protected:

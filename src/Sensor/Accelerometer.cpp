@@ -6,19 +6,21 @@
 #include <Wire.h>
 
 bool Accelerometer::init(Time*& timePtr, long pollingPeriod) {
-    // initializer list syntax type thing
-    // constructor ''''''''
-    Serial.println("Accelerometer init!");
-    if(icm42688.begin() != 1) return false;
+
+    if(!Sensor::init(timePtr, pollingPeriod)) return false;
+    Serial.println("Accelerometer init start...");
+
+
+    if(icm42688.begin() != 1) {
+        Serial.println("Accelerometer init fail ---");
+        return false;
+    }
 
     icm42688.setAccelFS(ICM42688::gpm16);
     icm42688.setGyroFS(ICM42688::dps250);
     icm42688.setAccelODR(ICM42688::odr100);
     icm42688.setGyroODR(ICM42688::odr100);
-
-    // might want to revisit access
-    this->pollingPeriod = pollingPeriod;
-    this->time = timePtr;
+    Serial.println("Accelerometer init good ---");
 
     return true;
 }

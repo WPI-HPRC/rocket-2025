@@ -8,7 +8,6 @@
 
 #include <stdlib.h>
 
-//template <class Data>
 class Sensor {
 
 protected:
@@ -18,31 +17,20 @@ protected:
     Time* time;
 
 public:
-    Sensor(Time* time, long pollingPeriod);
 
-    virtual bool init(Time *&, long) = 0;
-
-    void* update();
-    long getLastTimeRead();
-
-    virtual size_t sensorDataBytes() const = 0;
-    virtual ~Sensor() = default;
-    /*
-public:
-    void* update();
-    long getLastTimeRead();
-
-    Sensor(Time* time, long pollingPeriod):
-    time(time),
-    pollingPeriod(pollingPeriod),
-    lastTimeRead(time->millis())
+    Sensor(Time*& timePtr, long pollingPeriod) :
+        time(timePtr),
+        pollingPeriod(pollingPeriod),
+        lastTimeRead(time->millis())
     {}
-    
-    virtual bool init();
+
+    bool init(Time*&, long);
+
+    void* update();
+    long getLastTimeRead();
 
     virtual size_t sensorDataBytes() const = 0;
-    virtual ~Sensor() = default;
+    virtual ~Sensor() = default; /* what is this for */
 
     void* data; // what is this
-     */
 };

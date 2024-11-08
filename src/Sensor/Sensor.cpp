@@ -4,9 +4,13 @@
 
 #include "Sensor.h"
 
-bool init(Time *&, long) {
-    return 0;
-} // is this gonna make it work? idk
+bool Sensor::init(Time*& timePtr, long pollingPeriod) {
+    this->time = timePtr;
+    this->pollingPeriod = pollingPeriod;
+    this->lastTimeRead = timePtr->millis();
+
+    return true;
+}
 
 void* Sensor::update() {
     long now = time->millis();
@@ -20,4 +24,3 @@ void* Sensor::update() {
 long Sensor::getLastTimeRead() {
     return lastTimeRead;
 }
-
