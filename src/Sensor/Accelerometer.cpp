@@ -26,7 +26,6 @@ bool Accelerometer::init(Time*& timePtr, long pollingPeriod) {
 }
 
 void* Accelerometer::poll() {
-    Serial.println("Accelerometer poll!");
     icm42688.getAGT(); // ??
 
     data.accX = icm42688.accX();
@@ -40,5 +39,19 @@ void* Accelerometer::poll() {
 }
 
 size_t Accelerometer::sensorDataBytes() const {
-  return sizeof(Data);
+  return sizeof(AccelerometerData);
+}
+
+AccelerometerData Accelerometer::getData() {
+    return this->data;
+}
+
+void Accelerometer::debugData() {
+    Serial.print("time: "); Serial.print(this->getData().id.timestamp);
+    Serial.print("accX: "); Serial.print(this->data.accX);
+    Serial.print(", accY: "); Serial.print(this->data.accY);
+    Serial.print(", accZ: "); Serial.print(this->data.accZ);
+    Serial.print(", gyroX: "); Serial.print(this->data.gyroX);
+    Serial.print(", gyroY: "); Serial.print(this->data.gyroY);
+    Serial.print(", gyroZ: "); Serial.println(this->data.gyroZ);
 }

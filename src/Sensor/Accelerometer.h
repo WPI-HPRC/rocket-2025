@@ -8,7 +8,8 @@
 
 const int addr = 0x68;
 
-struct Data {
+struct AccelerometerData {
+    ID id;
     float accX;
     float accY;
     float accZ;
@@ -24,11 +25,12 @@ public:
         Sensor(timePtr, pollingPeriod),
         icm42688(Wire, addr) { }
 
-    bool init(Time *&, long);
-
-    Data data;
+    bool init(Time *&, long) override;
+    AccelerometerData getData();
+    void debugData();
 
 private:
+    AccelerometerData data;
     ICM42688 icm42688;
 
 protected:

@@ -3,6 +3,7 @@
 //
 
 #include "Sensor.h"
+#include "Arduino.h"
 
 bool Sensor::init(Time*& timePtr, long pollingPeriod) {
     this->time = timePtr;
@@ -16,6 +17,7 @@ void* Sensor::update() {
     long now = time->millis();
     if (now - lastTimeRead >= pollingPeriod) {
         lastTimeRead = now;
+        id.timestamp = lastTimeRead;
         return poll();
     }
     return nullptr;

@@ -5,18 +5,15 @@
 
 #include <Wire.h>
 
-ArduinoTime timeService;
-Rocket rocket(&timeService);
+ArduinoTime timeService = {};
+Rocket rocket(reinterpret_cast<Time *>(&timeService));
 
 // Something in Rocket is causing issues
 
 void setup() {
     Serial.begin(9600);
-
     Wire.begin(4000000);
-
     rocket.init();
-
 }
 
 void loop() {

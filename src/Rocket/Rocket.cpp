@@ -24,24 +24,14 @@ void Rocket::iterate() {
 
     for (size_t i = 0; i < sizeof(Sensors) / sizeof(Sensor*); i++) {
         void* data = sensorArray[i]->update();
-        Serial.println(data != nullptr);
+        //Serial.println(data != nullptr);
 
         size_t dataSize = sensorArray[i]->sensorDataBytes();
         if (data) {
-            Serial.println(sensors.accelerometer->data.accX);
-            Serial.print("accX: "); Serial.print(sensors.accelerometer->data.accX);
-            Serial.print(", accY: "); Serial.print(sensors.accelerometer->data.accY);
-            Serial.print(", accZ: "); Serial.print(sensors.accelerometer->data.accZ);
-            Serial.print(", gyroX: "); Serial.print(sensors.accelerometer->data.gyroX);
-            Serial.print(", gyroY: "); Serial.print(sensors.accelerometer->data.gyroY);
-            Serial.print(", gyroZ: "); Serial.println(sensors.accelerometer->data.gyroZ);
+            sensors.accelerometer->debugData();
             char* buffer = new char[dataSize];
             memcpy(buffer, data, dataSize);
-
-            // Serial.printf("Data %d: %s @ %d\n", i, buffer, sensorArray[i]->getLastTimeRead());
-
             delete[] buffer;
         }
     }
-
 }

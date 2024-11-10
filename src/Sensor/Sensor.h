@@ -8,29 +8,33 @@
 
 #include <stdlib.h>
 
+struct ID {
+    long timestamp;
+};
+
 class Sensor {
+private:
+    void* data;
 
 protected:
     virtual void* poll() = 0;
     long lastTimeRead;
     long pollingPeriod;
     Time* time;
+    ID id;
 
 public:
 
-    Sensor(Time*& timePtr, long pollingPeriod) :
+    Sensor(Time* timePtr, long pollingPeriod) :
         time(timePtr),
         pollingPeriod(pollingPeriod),
-        lastTimeRead(time->millis())
+        lastTimeRead(0)
     {}
 
-    bool init(Time*&, long);
-
+    virtual bool init(Time*&, long); // clean
     void* update();
     long getLastTimeRead();
 
     virtual size_t sensorDataBytes() const = 0;
-    virtual ~Sensor() = default; /* what is this for */
-
-    void* data; // what is this
+    virtual ~Sensor() = default;
 };
