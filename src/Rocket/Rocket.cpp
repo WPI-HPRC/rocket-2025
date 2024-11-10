@@ -13,7 +13,7 @@ Rocket::Rocket(Time *time) : time(time) {
 void Rocket::init() {
     Sensor** sensorArray = (Sensor **) &sensors;
     for (size_t i = 0; i < sizeof(Sensors) / sizeof(Sensor *); i++) {
-        sensorArray[i]->init(time, 1000 / 100);
+        //sensorArray[i]->init();
         // do we even need this here???
     }
 }

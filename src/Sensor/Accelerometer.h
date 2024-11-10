@@ -3,7 +3,7 @@
 //
 
 #pragma once
-#include <ICM42688.h> // need to add ??
+#include <ICM42688.h>
 #include "Sensor.h"
 
 const int addr = 0x68;
@@ -25,12 +25,12 @@ public:
         Sensor(timePtr, pollingPeriod),
         icm42688(Wire, addr) { }
 
-    bool init(Time *&, long) override;
+    bool init() override;
     AccelerometerData getData();
     void debugData();
 
 private:
-    AccelerometerData data;
+    AccelerometerData data{};
     ICM42688 icm42688;
 
 protected:

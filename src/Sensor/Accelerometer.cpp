@@ -5,9 +5,7 @@
 #include "Accelerometer.h"
 #include <Wire.h>
 
-bool Accelerometer::init(Time*& timePtr, long pollingPeriod) {
-
-    if(!Sensor::init(timePtr, pollingPeriod)) return false;
+bool Accelerometer::init() {
     Serial.println("Accelerometer init start...");
 
 
@@ -26,7 +24,7 @@ bool Accelerometer::init(Time*& timePtr, long pollingPeriod) {
 }
 
 void* Accelerometer::poll() {
-    icm42688.getAGT(); // ??
+    icm42688.getAGT();
 
     data.accX = icm42688.accX();
     data.accY = icm42688.accY();
@@ -48,7 +46,7 @@ AccelerometerData Accelerometer::getData() {
 
 void Accelerometer::debugData() {
     Serial.print("time: "); Serial.print(this->getData().id.timestamp);
-    Serial.print("accX: "); Serial.print(this->data.accX);
+    Serial.print(", accX: "); Serial.print(this->data.accX);
     Serial.print(", accY: "); Serial.print(this->data.accY);
     Serial.print(", accZ: "); Serial.print(this->data.accZ);
     Serial.print(", gyroX: "); Serial.print(this->data.gyroX);

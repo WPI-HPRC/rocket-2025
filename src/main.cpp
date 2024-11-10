@@ -6,9 +6,8 @@
 #include <Wire.h>
 
 ArduinoTime timeService = {};
+// issue now is timeService
 Rocket rocket(reinterpret_cast<Time *>(&timeService));
-
-// Something in Rocket is causing issues
 
 void setup() {
     Serial.begin(9600);

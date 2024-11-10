@@ -3,15 +3,12 @@
 //
 
 #include "Sensor.h"
-#include "Arduino.h"
 
-bool Sensor::init(Time*& timePtr, long pollingPeriod) {
-    this->time = timePtr;
-    this->pollingPeriod = pollingPeriod;
-    this->lastTimeRead = timePtr->millis();
-
+/*
+bool Sensor::init() {
     return true;
 }
+*/
 
 void* Sensor::update() {
     long now = time->millis();
