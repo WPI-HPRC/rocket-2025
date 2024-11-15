@@ -1,0 +1,33 @@
+//
+// Created by Daniel Coburn on 11/14/24.
+//
+
+#pragma once
+
+#include "Sensor.h"
+#include <SparkFun_MMC5983MA_Arduino_Library.h>
+
+struct MagnetometerData {
+    ID id;
+    double x;
+    double y;
+    double z;
+};
+
+class Magnetometer: public Sensor  {
+public:
+    Magnetometer(Time* timePtr, long pollingPeriod) :
+    Sensor(timePtr, pollingPeriod) { };
+
+    bool init() override;
+    MagnetometerData getData();
+    void debugData() override;
+
+private:
+    MagnetometerData data{};
+    SFE_MMC5983MA mag;
+
+protected:
+    void* poll() override;
+    size_t sensorDataBytes() const override;
+};

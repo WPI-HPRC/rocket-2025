@@ -29,6 +29,7 @@ public:
     {}
 
     virtual bool init() = 0;
+    virtual void debugData() = 0;
     void* update();
     long getLastTimeRead();
     virtual size_t sensorDataBytes() const = 0;

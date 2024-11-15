@@ -3,8 +3,8 @@
 //
 
 #pragma once
-#include <ICM42688.h>
 #include "Sensor.h"
+#include <ICM42688.h>
 
 const int addr = 0x68;
 
@@ -27,7 +27,7 @@ public:
 
     bool init() override;
     AccelerometerData getData();
-    void debugData();
+    void debugData() override;
 
 private:
     AccelerometerData data{};
@@ -35,5 +35,5 @@ private:
 
 protected:
     void* poll() override;
-    size_t sensorDataBytes() const;
+    size_t sensorDataBytes() const override;
 };
