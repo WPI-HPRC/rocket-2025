@@ -5,7 +5,14 @@
 #include "Magnetometer.h"
 
 bool Magnetometer::init() {
-    return false;
+    if (!this->mag.begin()) {
+        return false;
+    }
+
+    this->mag.softReset();
+    this->mag.setFilterBandwidth(800); // Filter Bandwith - BITS 0 | 0 (100Hz - 0.4 mG RMS Noise)
+
+    return true;
 }
 
 void* Magnetometer::poll() {
