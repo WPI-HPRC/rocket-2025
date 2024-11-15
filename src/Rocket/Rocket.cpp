@@ -6,7 +6,8 @@
 Rocket::Rocket(Time *time) : time(time) {
 
     sensors = Sensors {
-      .accelerometer = new Accelerometer(time, 1000 / 100),
+      .accelerometer = new Accelerometer(time, 1000 / 100), // made up numbers
+      .magnetometer = new Magnetometer(time, 2000 / 100) // made up numbers
     };
 }
 

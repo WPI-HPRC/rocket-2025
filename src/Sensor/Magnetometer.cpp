@@ -5,17 +5,21 @@
 #include "Magnetometer.h"
 
 bool Magnetometer::init() {
+    Serial.print("Magnetometer init started...")
     if (!this->mag.begin()) {
+        Serial.print("Magnetometer init fail")
         return false;
     }
 
     this->mag.softReset();
-    this->mag.setFilterBandwidth(800); // Filter Bandwith - BITS 0 | 0 (100Hz - 0.4 mG RMS Noise)
+    this->mag.setFilterBandwidth(800); // Filter Bandwidth - BITS 0 | 0 (100Hz - 0.4 mG RMS Noise)
 
+    Serial.print("Magnetometer init good")
     return true;
 }
 
 void* Magnetometer::poll() {
+    Serial.print("Magnetometer poll")
     uint32_t rawX = mag.getMeasurementX();
     uint32_t rawY = mag.getMeasurementY();
     uint32_t rawZ = mag.getMeasurementZ();

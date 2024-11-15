@@ -12,12 +12,17 @@ bool Sensor::init() {
 
 void* Sensor::update() {
     long now = time->millis();
-    if (now - lastTimeRead >= pollingPeriod) {
+    if (readyToRead()) {
         lastTimeRead = now;
         id.timestamp = lastTimeRead;
         return poll();
     }
     return nullptr;
+}
+
+bool Sensor::readyToRead() {
+    long now = time->millis();
+    return (now - lastTimeRead >= pollingPeriod);
 }
 
 long Sensor::getLastTimeRead() {

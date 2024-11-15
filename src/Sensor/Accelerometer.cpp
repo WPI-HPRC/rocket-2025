@@ -8,7 +8,6 @@
 bool Accelerometer::init() {
     Serial.println("Accelerometer init start...");
 
-
     if(icm42688.begin() != 1) {
         Serial.println("Accelerometer init fail ---");
         return false;

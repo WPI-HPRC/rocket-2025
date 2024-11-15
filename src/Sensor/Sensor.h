@@ -9,6 +9,7 @@
 
 struct ID {
     long timestamp;
+    // would having a feild for telemetry use here be usefull??
 };
 
 class Sensor {
@@ -17,9 +18,10 @@ protected:
     long lastTimeRead;
     long pollingPeriod;
     Time* time;
-    ID id{};
-
     virtual void* poll() = 0;
+
+private:
+    ID id{};
 
 public:
     Sensor(Time* timePtr, long pollingPeriod) :
@@ -27,6 +29,8 @@ public:
         pollingPeriod(pollingPeriod),
         lastTimeRead(0)
     {}
+
+    bool readyToRead();
 
     virtual bool init() = 0;
     virtual void debugData() = 0;
