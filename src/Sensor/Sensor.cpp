@@ -5,10 +5,11 @@
 #include "Sensor.h"
 
 /*
-bool Sensor::init() {
-    return true;
+void Sensor::init() {
+    initStatus = true;
 }
-*/
+ */
+
 
 void* Sensor::update() {
     long now = time->millis();
@@ -27,4 +28,8 @@ bool Sensor::readyToRead() {
 
 long Sensor::getLastTimeRead() {
     return lastTimeRead;
+}
+
+bool Sensor::getInitStatus() {
+    return initStatus;
 }

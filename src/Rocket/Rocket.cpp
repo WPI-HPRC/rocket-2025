@@ -14,7 +14,7 @@ Rocket::Rocket(Time *time) : time(time) {
 void Rocket::init() {
     Sensor** sensorArray = (Sensor **) &sensors;
     for (size_t i = 0; i < sizeof(Sensors) / sizeof(Sensor *); i++) {
-        //sensorArray[i]->init();
+        sensorArray[i]->init();
         // do we even need this here???
     }
 }
@@ -25,11 +25,11 @@ void Rocket::iterate() {
 
     for (size_t i = 0; i < sizeof(Sensors) / sizeof(Sensor*); i++) {
         void* data = sensorArray[i]->update();
-        //Serial.println(data != nullptr);
 
         size_t dataSize = sensorArray[i]->sensorDataBytes();
+        sensorArray[i]->debugData();
+        
         if (data) {
-            sensors.accelerometer->debugData();
             char* buffer = new char[dataSize];
             memcpy(buffer, data, dataSize);
             delete[] buffer;

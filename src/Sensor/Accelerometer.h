@@ -4,6 +4,7 @@
 
 #pragma once
 #include "Sensor.h"
+#include <optional>
 #include <ICM42688.h>
 
 const int addr = 0x68;
@@ -26,7 +27,7 @@ public:
         icm42688(Wire, addr) { }
 
     bool init() override;
-    AccelerometerData getData();
+    std::optional<AccelerometerData> getData();
     void debugData() override;
 
 private:

@@ -5,6 +5,7 @@
 #pragma once
 
 #include "Sensor.h"
+#include <optional>
 #include <SparkFun_MMC5983MA_Arduino_Library.h>
 
 struct MagnetometerData {
@@ -20,7 +21,7 @@ public:
     Sensor(timePtr, pollingPeriod) { };
 
     bool init() override;
-    MagnetometerData getData();
+    std::optional<struct MagnetometerData> getData();
     void debugData() override;
 
 private:
