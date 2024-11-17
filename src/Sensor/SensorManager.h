@@ -6,22 +6,19 @@
 
 #include <vector>
 #include "Sensor.h"
-/*
- * include information about sensors
- *  - hide it
- *  - allow adding sensors
- *  - allow for custom polling logic, so hardware is not going to be a big deal
- */
+#include "TaskScheduler/Task.h"
 
-class SensorManager {
+
+class SensorManager: public Task {
 public:
     bool addSensor(Sensor* sensorPtr); // add sensor, true if added, false if not added
-    void** readSensors(); // array of reading pointers
-
-    // un-allocation
-    virtual ~SensorManager() = default;
+    bool removeSensor(Sensor* sensorPtr); // remove sensor, true if success
+    void run() override; // going to be called by taskScheduler
+    virtual ~SensorManager() = default; // un-allocation
 
 private:
+    void** readSensors(); // array of reading pointers
+    Time* timer;
     std::vector<Sensor*> sensors;
 
 protected:

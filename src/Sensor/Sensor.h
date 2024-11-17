@@ -9,7 +9,8 @@
 
 struct ID {
     long timestamp;
-    // would having a field for telemetry use here be usefull??
+    // int sensorNumber;
+    // would having a field for telemetry use here be useful??
 };
 
 class Sensor {
@@ -17,26 +18,27 @@ class Sensor {
 protected:
     long lastTimeRead;
     long pollingPeriod;
-    Time* time;
+    //Time* time;
     virtual void* poll() = 0;
     bool initStatus = false;
+    int sensorNumber;
 
 private:
     ID id{};
 
 public:
-    Sensor(Time* timePtr, long pollingPeriod) :
-        time(timePtr),
+    Sensor(long pollingPeriod, int sensorNumber) :
+        sensorNumber(sensorNumber),
         pollingPeriod(pollingPeriod),
-        lastTimeRead(0)
-    {}
+        lastTimeRead(0) { }
 
     bool getInitStatus();
-    bool readyToRead();
+    //bool readyToRead();
     virtual bool init() = 0;
     virtual void debugData() = 0;
     void* update();
     long getLastTimeRead();
+    long getPollingPeriod();
     virtual size_t sensorDataBytes() const = 0;
     virtual ~Sensor() = default;
 };

@@ -17,8 +17,8 @@ struct MagnetometerData {
 
 class Magnetometer: public Sensor  {
 public:
-    Magnetometer(Time* timePtr, long pollingPeriod) :
-    Sensor(timePtr, pollingPeriod) { };
+    Magnetometer(long pollingPeriod, int sensorNumber) :
+    Sensor(pollingPeriod, sensorNumber) { }
 
     bool init() override;
     std::optional<struct MagnetometerData> getData();

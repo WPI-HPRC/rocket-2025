@@ -1,0 +1,16 @@
+sensor manager is going to abstract out the specifics of how a sensor "exists"
+to allow for implementation into rtos there should be the ability to pass a function as to how
+sensors are going to be polled, or how to get data from them. this way the user can set up for their needs,
+and only need to provide hardware specific information
+
+would there be a way to have the data field of an individual sensor be in the sensor class and not in the
+implementation,
+
+move math for if sensor can be read outside, have list with sensor, and next polling time
+before calling check if condition is met
+sensor knows its polling interval, and nothing about time
+
+SensorData deffinition in Sensor.h not individal sensors
+
+in the individual sensors, they are returining an optional, can that logic be put into Sensor instead of
+conclrete implementations of Sensor

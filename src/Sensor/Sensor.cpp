@@ -12,18 +12,25 @@ void Sensor::init() {
 
 
 void* Sensor::update() {
-    long now = time->millis();
-    if (readyToRead()) {
-        lastTimeRead = now;
-        id.timestamp = lastTimeRead;
+    // TODO: Time is going to be handled by the SensorManager
+    //long now = time->millis();
+    if (initStatus) {
+        //lastTimeRead = now;
+        //id.timestamp = lastTimeRead;
         return poll();
     }
     return nullptr;
 }
 
+/*
 bool Sensor::readyToRead() {
     long now = time->millis();
     return (now - lastTimeRead >= pollingPeriod);
+}
+ */
+
+long Sensor::getPollingPeriod() {
+    return pollingPeriod;
 }
 
 long Sensor::getLastTimeRead() {

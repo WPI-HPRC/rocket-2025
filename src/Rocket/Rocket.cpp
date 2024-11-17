@@ -6,8 +6,8 @@
 Rocket::Rocket(Time *time) : time(time) {
 
     sensors = Sensors {
-      .accelerometer = new Accelerometer(time, 1000 / 100), // made up numbers
-      .magnetometer = new Magnetometer(time, 2000 / 100) // made up numbers
+      .accelerometer = new Accelerometer(1000 / 100, 0), // made up numbers
+      .magnetometer = new Magnetometer(2000 / 100, 1) // made up numbers
     };
 }
 
@@ -15,7 +15,6 @@ void Rocket::init() {
     Sensor** sensorArray = (Sensor **) &sensors;
     for (size_t i = 0; i < sizeof(Sensors) / sizeof(Sensor *); i++) {
         sensorArray[i]->init();
-        // do we even need this here???
     }
 }
 
@@ -28,7 +27,7 @@ void Rocket::iterate() {
 
         size_t dataSize = sensorArray[i]->sensorDataBytes();
         sensorArray[i]->debugData();
-        
+
         if (data) {
             char* buffer = new char[dataSize];
             memcpy(buffer, data, dataSize);

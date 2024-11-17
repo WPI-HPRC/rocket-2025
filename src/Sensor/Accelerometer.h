@@ -22,8 +22,8 @@ struct AccelerometerData {
 class Accelerometer: public Sensor {
 
 public:
-    Accelerometer(Time* timePtr, long pollingPeriod) :
-        Sensor(timePtr, pollingPeriod),
+    Accelerometer(long pollingPeriod, int sensorNumber) :
+        Sensor(pollingPeriod, sensorNumber),
         icm42688(Wire, addr) { }
 
     bool init() override;
