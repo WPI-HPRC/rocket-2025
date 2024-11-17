@@ -1,6 +1,5 @@
 #include "Rocket/Rocket.h"
 #include <Arduino.h>
-
 #include <cstring>
 
 Rocket::Rocket(Time *time) : time(time) {
@@ -14,9 +13,16 @@ void Rocket::init() {
     } else {
         Serial.println("oh no... :(");
     }
+    if(taskScheduler.add(&sensorManager)) {
+        Serial.println("sensor manager added");
+    } else {
+        Serial.println("sensor manager was not added");
+    }
 }
 
 void Rocket::iterate() {
+
+    taskScheduler.run();
 /*
     Sensor** sensorArray = (Sensor**) &sensors;
 
@@ -34,5 +40,4 @@ void Rocket::iterate() {
         }
     }
     */
-    Serial.println("i just work here...");
 }

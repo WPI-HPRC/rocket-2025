@@ -2,8 +2,10 @@
 // Created by Daniel Coburn on 11/16/24.
 //
 
-#include "TaskScheduler.h"
+#include "TaskScheduler/TaskScheduler.h"
 #include <Arduino.h>
+
+TaskScheduler::TaskScheduler() : taskList() {}
 
 void TaskScheduler::run() {
     // run tasks

@@ -14,6 +14,6 @@ void setup() {
 }
 
 void loop() {
-    //rocket.iterate();
+    rocket.iterate();
     delay(5);
 }

@@ -5,8 +5,8 @@
 #pragma once
 
 #include <vector>
-#include "Sensor.h"
-#include "TaskScheduler/Task.h"
+#include "../Sensor/Sensor.h"
+#include "../TaskScheduler/Task.h"
 
 
 class SensorManager: public Task {

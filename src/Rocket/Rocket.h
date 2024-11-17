@@ -1,13 +1,16 @@
 #pragma once
 
-#include "Sensor/SensorManager.h"
+#include "../SensorManager/SensorManager.h"
+#include "SensorManager/SensorManager.h"
 #include "services/Time.h"
+#include "TaskScheduler/TaskScheduler.h"
 
 class Rocket {
 
 private:
-    SensorManager sensorManager;
     Time *time;
+    TaskScheduler taskScheduler;
+    SensorManager sensorManager;
 
 public:
     void iterate();
