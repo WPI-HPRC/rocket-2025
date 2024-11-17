@@ -1,12 +1,12 @@
 #pragma once
 
-#include "Sensor/Sensors.h"
+#include "Sensor/SensorManager.h"
 #include "services/Time.h"
 
 class Rocket {
 
 private:
-    Sensors sensors;
+    SensorManager sensorManager;
     Time *time;
 
 public:

@@ -15,6 +15,7 @@ public:
     bool removeSensor(Sensor* sensorPtr); // remove sensor, true if success
     void run() override; // going to be called by taskScheduler
     virtual ~SensorManager() = default; // un-allocation
+    bool sensorInit(); // true if success false if something fail
 
 private:
     void** readSensors(); // array of reading pointers

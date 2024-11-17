@@ -1,8 +1,6 @@
 #include "Rocket/Rocket.h"
 #include "services/ArduinoTime.h"
-
 #include <Arduino.h>
-
 #include <Wire.h>
 
 ArduinoTime timeService = {};
@@ -16,6 +14,6 @@ void setup() {
 }
 
 void loop() {
-    rocket.iterate();
+    //rocket.iterate();
     delay(5);
 }

@@ -24,11 +24,11 @@ void** SensorManager::readSensors() {
     void** data = new void*[sensors.size()];
 
     for (size_t i = 0; i < sensors.size(); ++i) {
-        //data[i] = sensors[i]->update();
+        data[i] = sensors[i]->update();
         // THIS MIGHT CHANGE
         // TODO: update next call time for sensor
         //       - could use something like a hashmap without hash, ask abt
-        Serial.print("sensor update from sensor "); Serial.print(i);
+        Serial.print("sensor update from sensor "); Serial.println(i);
     }
     return data; // data should be freed by the caller
 }
@@ -36,4 +36,12 @@ void** SensorManager::readSensors() {
 void SensorManager::run() {
     // can put data here somewhere for later use or something
     readSensors();
+}
+
+bool SensorManager::sensorInit() {
+    bool success = false;
+    for (size_t i = 0; i < sensors.size(); ++i) {
+        success = success && sensors[i]->init();
+    }
+    return success;
 }

@@ -5,22 +5,21 @@
 
 Rocket::Rocket(Time *time) : time(time) {
 
-    sensors = Sensors {
-      .accelerometer = new Accelerometer(1000 / 100, 0), // made up numbers
-      .magnetometer = new Magnetometer(2000 / 100, 1) // made up numbers
-    };
 }
 
 void Rocket::init() {
-    Sensor** sensorArray = (Sensor **) &sensors;
-    for (size_t i = 0; i < sizeof(Sensors) / sizeof(Sensor *); i++) {
-        sensorArray[i]->init();
+    //Sensor** sensorArray = (Sensor **) &sensors;
+    if(sensorManager.sensorInit()) {
+        Serial.println("all is good, moving on");
+    } else {
+        Serial.println("oh no... :(");
     }
 }
 
 void Rocket::iterate() {
-
+/*
     Sensor** sensorArray = (Sensor**) &sensors;
+
 
     for (size_t i = 0; i < sizeof(Sensors) / sizeof(Sensor*); i++) {
         void* data = sensorArray[i]->update();
@@ -34,4 +33,6 @@ void Rocket::iterate() {
             delete[] buffer;
         }
     }
+    */
+    Serial.println("i just work here...");
 }
