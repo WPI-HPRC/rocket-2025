@@ -6,10 +6,7 @@
 #include <Wire.h>
 
 bool Accelerometer::init() {
-    Serial.println("Accelerometer init start...");
-
     if(icm42688.begin() != 1) {
-        Serial.println("Accelerometer init fail ---");
         return false;
     }
 
@@ -17,13 +14,13 @@ bool Accelerometer::init() {
     icm42688.setGyroFS(ICM42688::dps250);
     icm42688.setAccelODR(ICM42688::odr100);
     icm42688.setGyroODR(ICM42688::odr100);
-    Serial.println("Accelerometer init good ---");
 
     initStatus = true;
     return true;
 }
 
 void* Accelerometer::poll() {
+    Serial.println("yes i am being polled");
     if(initStatus) {
         icm42688.getAGT();
 

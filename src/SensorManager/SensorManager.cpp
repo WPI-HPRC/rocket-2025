@@ -6,47 +6,62 @@
 #include <Arduino.h>
 
 bool SensorManager::addSensor(Sensor *sensorPtr) {
-    auto it = std::find(sensors.begin(), sensors.end(), sensorPtr);
-    // ask about this might be a better way
+    Serial.println("adding sensor");
+        auto it = std::find(sensors.begin(), sensors.end(), sensorPtr);
+        // ask about this might be a better way
 
-    if (it == sensors.end()) {
-        sensors.push_back(sensorPtr);
-        return true;
-    }
-    Serial.print("sensor already exists");
+        if (it == sensors.end()) {
+            Serial.println("added...");
+            sensors.push_back(sensorPtr);
+            return true;
+        }
+        Serial.print("sensor already exists");
     return false;
 }
 
 void** SensorManager::readSensors() {
-    Serial.println("I am reading my sensors...");
-    // could sort by next polling time
-    if (sensors.empty()) return nullptr;
+    Serial.print("read sensors from list of len "); Serial.println(sensors.size());
+    // TODO this might be a memory leak issue down the line
 
     void** data = new void*[sensors.size()];
 
-    for (size_t i = 0; i < sensors.size(); ++i) {
-        Serial.println("sensor read...");
-        if (sensors[i]->getLastTimeRead() + sensors[i]->getPollingPeriod() >= timer->millis()) {
-            data[i] = sensors[i]->update();
-            // THIS MIGHT CHANGE
-            // TODO: update next call time for sensor
-            //       - could use something like a hashmap without hash, ask abt
-            Serial.print("sensor update from sensor ");
+    for (size_t i = 0; i < sensors.size(); i++) {
+        if (sensors[i]->getInitStatus()) {
+            Serial.print("I am reading sensor ");
             Serial.println(i);
+            long currentTime = timer->millis();
+            if (sensors[i]->getLastTimeRead() + sensors[i]->getPollingPeriod() >= currentTime) {
+                data[i] = sensors[i]->update(currentTime);
+
+                Serial.print("sensor update from sensor ");
+                Serial.println(i);
+            }
+        } else {
+            // could add some error block for diagnostics on telemetry?
+            Serial.println("sensor does not exist");
         }
     }
-    return data; // TODO data should be freed by the caller
+    return data; // data should be freed by the caller
 }
 
 void SensorManager::run() {
+    //Serial.println("reading sensors...");
     // can put data here somewhere for later use or something
-    readSensors();
+    void** data = readSensors();
+    for(size_t i = 0; i < sensors.size(); i++) {
+        Serial.println("doing things to data...");
+    }
+    delete[] data; // TODO move this somewhere else so data can be accessed
 }
 
 bool SensorManager::sensorInit() {
-    bool success = false;
+    bool success = true;
     for (size_t i = 0; i < sensors.size(); ++i) {
         success = success && sensors[i]->init();
+        Serial.print("Sensor ");
+        Serial.print(i);
+        Serial.print(" init status: ");
+        Serial.println(sensors[i]->getInitStatus() ? "SUCCESS" : "FAILURE");
     }
     return success;
 }

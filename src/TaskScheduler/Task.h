@@ -7,5 +7,5 @@
 // is there a way to make an interface
 class Task {
 public:
-    virtual void run();
+    virtual void run() = 0;
 };

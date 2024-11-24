@@ -33,10 +33,9 @@ public:
         lastTimeRead(0) { }
 
     bool getInitStatus();
-    //bool readyToRead();
     virtual bool init() = 0;
     virtual void debugData() = 0;
-    void* update();
+    void* update(long currentTime);
     long getLastTimeRead();
     long getPollingPeriod();
     virtual size_t sensorDataBytes() const = 0;

@@ -2,12 +2,22 @@
 #include <Arduino.h>
 #include <cstring>
 
-Rocket::Rocket(Time *time) : time(time) {
-
-}
+Rocket::Rocket(Time *time) :
+time(time),
+accelerometer(100, 0),
+magnetometer(200, 1) {}
 
 void Rocket::init() {
-    //Sensor** sensorArray = (Sensor **) &sensors;
+    sensorManager.addSensor(&accelerometer);
+    sensorManager.addSensor(&magnetometer);
+    if(!sensorManager.sensorInit()) {
+        Serial.println("sensorManager Failed");
+    }
+    if(!taskScheduler.add(&sensorManager)) {
+        Serial.println("task scheduler failed to add SensorManager");
+    }
+
+    /*
     if(sensorManager.sensorInit()) {
         Serial.println("all is good, moving on");
     } else {
@@ -18,6 +28,7 @@ void Rocket::init() {
     } else {
         Serial.println("sensor manager was not added");
     }
+     */
 }
 
 void Rocket::iterate() {
