@@ -12,15 +12,6 @@ void TaskScheduler::run() {
         currentTask->run();
     }
 }
-/*
- * void* data = sensorManager.readSensors();  // Get the sensor data
-// Use the data...
-// Free the data once done
-for (size_t i = 0; i < sensors.size(); i++) {
-    delete data[i];  // Free each pointer (if allocated)
-}
-delete[] data;
- */
 
 bool TaskScheduler::add(Task *task) {
     auto it = std::find(taskList.begin(), taskList.end(), task);
@@ -37,6 +28,5 @@ void TaskScheduler::remove(Task *task) {
 
     if(it != taskList.end()) {
         taskList.erase(it, taskList.end());
-        // i blindly copied this, have no real clue if its correct
     }
 }

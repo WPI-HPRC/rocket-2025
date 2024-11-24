@@ -23,5 +23,4 @@ private:
     std::vector<Sensor*> sensors;
 
 protected:
-    //
 };

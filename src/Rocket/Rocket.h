@@ -14,7 +14,7 @@ private:
     TaskScheduler taskScheduler;
     SensorManager sensorManager;
     Accelerometer accelerometer;
-    Magnetometer magnetometer;
+    //Magnetometer magnetometer;
 
 public:
     void iterate();

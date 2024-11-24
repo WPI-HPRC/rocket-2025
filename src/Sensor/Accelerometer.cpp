@@ -6,7 +6,9 @@
 #include <Wire.h>
 
 bool Accelerometer::init() {
+    Serial.println("init for acc");
     if(icm42688.begin() != 1) {
+        Serial.println("init for acc failed");
         return false;
     }
 
@@ -15,6 +17,7 @@ bool Accelerometer::init() {
     icm42688.setAccelODR(ICM42688::odr100);
     icm42688.setGyroODR(ICM42688::odr100);
 
+    Serial.println("init for acc did not fail");
     initStatus = true;
     return true;
 }

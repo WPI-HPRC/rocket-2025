@@ -18,7 +18,6 @@ class Sensor {
 protected:
     long lastTimeRead;
     long pollingPeriod;
-    //Time* time;
     virtual void* poll() = 0;
     bool initStatus = false;
     int sensorNumber;

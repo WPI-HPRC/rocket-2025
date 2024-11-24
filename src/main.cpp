@@ -4,7 +4,6 @@
 #include <Wire.h>
 
 ArduinoTime timeService = {};
-// issue now is timeService
 Rocket rocket(reinterpret_cast<Time *>(&timeService));
 
 void setup() {
@@ -16,7 +15,6 @@ void setup() {
 }
 
 void loop() {
-    //Serial.println("Main Loop Start");
     rocket.iterate();
     delay(5);
 }

@@ -4,16 +4,8 @@
 
 #include "Sensor.h"
 
-/*
-void Sensor::init() {
-    initStatus = true;
-}
- */
-
-
 void* Sensor::update(long currentTime) {
     // TODO: Time is going to be handled by the SensorManager
-    //long now = time->millis();
     if (initStatus) {
         lastTimeRead = currentTime;
         return poll();
