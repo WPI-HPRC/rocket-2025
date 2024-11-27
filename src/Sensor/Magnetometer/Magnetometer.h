@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "Sensor.h"
+#include "../Sensor.h"
 #include <optional>
 #include <SparkFun_MMC5983MA_Arduino_Library.h>
 

@@ -3,7 +3,7 @@
 //
 
 #pragma once
-#include "Sensor.h"
+#include "../Sensor.h"
 #include <optional>
 #include <ICM42688.h>
 

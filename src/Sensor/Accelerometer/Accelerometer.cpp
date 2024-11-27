@@ -5,6 +5,11 @@
 #include "Accelerometer.h"
 #include <Wire.h>
 
+/**
+ * public \n
+ * initialize the sensor
+ * @return true if all went well, false if not
+ */
 bool Accelerometer::init() {
     Serial.println("init for acc");
     if(icm42688.begin() != 1) {
@@ -22,6 +27,11 @@ bool Accelerometer::init() {
     return true;
 }
 
+/**
+ * protected \n
+ * read data from sensor
+ * @return void*, contains data from Accelerometer
+ */
 void* Accelerometer::poll() {
     Serial.println("yes i am being polled");
     if(initStatus) {
@@ -40,10 +50,20 @@ void* Accelerometer::poll() {
     }
 }
 
+/**
+ * protected \n
+ * gets size of data
+ * @return size of Accelerometer data in bytes
+ */
 size_t Accelerometer::sensorDataBytes() const {
   return sizeof(AccelerometerData);
 }
 
+/**
+ * public \n
+ * gets data, or std::nullopt if no Accelerometer
+ * @return data, or std::nullopt if no sensor
+ */
 std::optional<AccelerometerData> Accelerometer::getData() {
     if(initStatus) {
         return data;
@@ -52,6 +72,10 @@ std::optional<AccelerometerData> Accelerometer::getData() {
     }
 }
 
+/**
+ * public \n
+ * good for debug, prints data to screen
+ */
 void Accelerometer::debugData() {
     if(initStatus) {
         Serial.print("time: "); Serial.print(this->data.id.timestamp);

@@ -4,6 +4,11 @@
 
 #include "Magnetometer.h"
 
+/**
+ * public \n
+ * initialize sensor
+ * @return true if the sensor was initialized correctly, false if not
+ */
 bool Magnetometer::init() {
     if (!this->mag.begin()) {
         return false;
@@ -16,6 +21,11 @@ bool Magnetometer::init() {
     return true;
 }
 
+/**
+ * protected \n
+ * read data from the Magnetometer
+ * @return void*, contains data from the sensor
+ */
 void* Magnetometer::poll() {
     if(initStatus) {
         uint32_t rawX = mag.getMeasurementX();
@@ -40,10 +50,19 @@ void* Magnetometer::poll() {
     }
 }
 
+/**
+ * protected \n
+ * gets size of data in bytes
+ * @return size of data in bytes
+ */
 size_t Magnetometer::sensorDataBytes() const {
     return sizeof(MagnetometerData);
 }
 
+/**
+ * public \n
+ * @return std::optional, data the sensor got, or std::nullopt if no sensor
+ */
 std::optional<MagnetometerData> Magnetometer::getData() {
     if(initStatus) {
         return data;
@@ -52,6 +71,10 @@ std::optional<MagnetometerData> Magnetometer::getData() {
     }
 }
 
+/**
+ * public \n
+ * prints data values to screen, good for debug
+ */
 void Magnetometer::debugData() {
     if(initStatus) {
         Serial.print("time: "); Serial.print(this->data.id.timestamp);

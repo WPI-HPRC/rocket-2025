@@ -11,7 +11,7 @@ public:
     TaskScheduler();
     void run();
     bool add(Task* task);
-    void remove(Task* task);
+    bool remove(Task* task);
 
 private:
     std::vector<Task*> taskList;

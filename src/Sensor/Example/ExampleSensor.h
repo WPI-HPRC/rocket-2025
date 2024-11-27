@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "Sensor.h"
+#include "../Sensor.h"
 
 struct ExampleData {
     int a;

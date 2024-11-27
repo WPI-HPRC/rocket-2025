@@ -4,8 +4,8 @@
 #include "SensorManager/SensorManager.h"
 #include "services/Time.h"
 #include "TaskScheduler/TaskScheduler.h"
-#include "../Sensor/Accelerometer.h"
-#include "../Sensor/Magnetometer.h"
+#include "../Sensor/Accelerometer/Accelerometer.h"
+#include "../Sensor/Magnetometer/Magnetometer.h"
 
 class Rocket {
 
