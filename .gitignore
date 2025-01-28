@@ -2,4 +2,5 @@
 .vscode
 **/.cache
 **/compile_commands.json
-/.idea
+.idea
+.DS_Store
