@@ -2,7 +2,7 @@
 // Created by Daniel Coburn on 11/16/24.
 //
 
-#include "TaskScheduler/TaskScheduler.h"
+#include "TaskScheduler.h"
 #include <Arduino.h>
 
 // init with empty list

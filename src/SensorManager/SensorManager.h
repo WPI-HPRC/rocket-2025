@@ -7,10 +7,11 @@
 #include <vector>
 #include "../Sensor/Sensor.h"
 #include "../TaskScheduler/Task.h"
-
+#include "../services/Time.h"
 
 class SensorManager: public Task {
 public:
+    SensorManager(Time* time) : timer(time) {}
     bool addSensor(Sensor* sensorPtr); // add sensor, true if added, false if not added
     bool removeSensor(Sensor* sensorPtr); // remove sensor, true if success
     void run() override; // going to be called by taskScheduler

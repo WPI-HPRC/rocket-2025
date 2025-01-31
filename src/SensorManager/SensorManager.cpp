@@ -35,7 +35,7 @@ void** SensorManager::readSensors() {
     for (size_t i = 0; i < sensors.size(); i++) {
         if (sensors[i]->getInitStatus()) {
             long currentTime = timer->millis();
-            if (sensors[i]->getLastTimeRead() + sensors[i]->getPollingPeriod() >= currentTime) {
+            if (currentTime - sensors[i]->getLastTimeRead() >= sensors[i]->getPollingPeriod()) {
                 data[i] = sensors[i]->update(currentTime);
 
                 Serial.print("sensor update from sensor ");

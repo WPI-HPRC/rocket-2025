@@ -15,7 +15,6 @@ public:
 
 private:
     std::vector<Task*> taskList;
-    Time* timer;
 
 protected:
 };

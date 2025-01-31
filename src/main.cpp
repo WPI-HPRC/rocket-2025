@@ -16,5 +16,6 @@ void setup() {
 
 void loop() {
     rocket.iterate();
+    // Serial.println("Hi");
     delay(5);
 }
