@@ -15,17 +15,17 @@ enum StateId {
     ID_Abort
 };
 
-using State_t = State<Context, StateId, decltype(&millis)>;
-using StateMachine_t = StateMachine<Context, StateId, decltype(&millis)>;
+using State = TState<Context, StateId, decltype(&millis)>;
+using StateMachine = TStateMachine<Context, StateId, decltype(&millis)>;
 
 #define STATE(name)                                                            \
-    class name : public State_t {                                                     \
+    class name : public State {                                                \
       public:                                                                  \
-        name(Context *ctx) : State_t(ID_##name, ::millis, ctx) {}              \
+        name(Context *ctx) : State(ID_##name, ::millis, ctx) {}                \
                                                                                \
       private:                                                                 \
         void initialize_impl() override;                                       \
-        State_t *loop_impl() override;                                         \
+        State *loop_impl() override;                                           \
     }
 
 STATE(PreLaunch);

@@ -1,3 +1,6 @@
 #pragma once
 
-struct Context {};
+#include "sensors/LPS25.h"
+struct Context {
+  Barameter* baro;
+};
