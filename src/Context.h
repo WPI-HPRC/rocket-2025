@@ -2,5 +2,5 @@
 
 #include "sensors/LPS25.h"
 struct Context {
-  Barameter* baro;
+  Barometer* baro;
 };

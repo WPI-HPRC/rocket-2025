@@ -7,7 +7,7 @@
 #include <boilerplate/StateMachine/StateMachine.h>
 
 Context ctx = {
-    .baro = new Barameter(),
+    .baro = new Barometer(),
 };
 
 Sensor *sensors[1] = {ctx.baro};

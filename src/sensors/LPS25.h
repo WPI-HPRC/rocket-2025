@@ -4,16 +4,16 @@
 #include <Adafruit_LPS2X.h>
 #include <Adafruit_Sensor.h>
 
-struct BarameterData {
+struct BarometerData {
   float pressure;
 };
 
-class Barameter : public Sensor {
+class Barometer : public Sensor {
   public:
-    Barameter() : Sensor(sizeof(BarameterData), 40), lps() {}
+    Barometer() : Sensor(sizeof(BarometerData), 40), lps() {}
 
-    BarameterData getData() {
-      return *(BarameterData *)data;
+    BarometerData getData() {
+      return *(BarometerData *)data;
     }
 
   private:
@@ -30,7 +30,7 @@ class Barameter : public Sensor {
     void *poll() override {
       sensors_event_t pressure;
       lps.getEvent(&pressure, nullptr);
-      ((BarameterData *)data)->pressure = pressure.pressure;
+      ((BarometerData *)data)->pressure = pressure.pressure;
       return data;
     }
 };
