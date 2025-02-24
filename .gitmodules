@@ -1,3 +1,6 @@
 [submodule "src/boilerplate"]
 	path = src/boilerplate
 	url = https://github.com/WPI-HPRC/boilerplate.git
+[submodule "src/sensors"]
+	path = src/sensors
+	url = https://github.com/WPI-HPRC/all-sensors
