@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sensors/LPS25.h"
+#include "boilerplate/Sensors/Impl/LPS22.h"
 struct Context {
   Barometer* baro;
 };

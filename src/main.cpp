@@ -1,7 +1,6 @@
 #include <Arduino.h>
 
 #include "Context.h"
-#include "sensors/LPS25.h"
 #include "states/States.h"
 #include <boilerplate/Sensors/SensorManager/SensorManager.h>
 #include <boilerplate/StateMachine/StateMachine.h>
