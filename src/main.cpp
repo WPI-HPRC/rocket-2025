@@ -4,7 +4,9 @@
 #include "boilerplate/Sensors/Impl/ASM330.h"
 #include "boilerplate/Sensors/Impl/ICM20948.h"
 #include "boilerplate/Sensors/Impl/LPS22.h"
+#include "boilerplate/Sensors/Impl/MAX10S.h"
 #include "boilerplate/Sensors/Sensor/Sensor.h"
+#include "Wire.h"
 #include "states/States.h"
 #include <boilerplate/Sensors/SensorManager/SensorManager.h>
 #include <boilerplate/StateMachine/StateMachine.h>
@@ -13,6 +15,7 @@ Context ctx = {
     .accel = new ASM330(),
     .baro = new Barometer(),
     .icm = new ICM20948(),
+    .max10s = new MAX10S(),
 };
 
 Sensor *sensors[] = {ctx.accel, ctx.baro, ctx.icm};
