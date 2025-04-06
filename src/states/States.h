@@ -18,26 +18,42 @@ enum StateId {
 using State = TState<Context, StateId, decltype(&millis)>;
 using StateMachine = TStateMachine<Context, StateId, decltype(&millis)>;
 
-#define STATE(name)                                                            \
-    class name : public State {                                                \
-      public:                                                                  \
-        name(Context *ctx) : State(ID_##name, ::millis, ctx) {}                \
+#define STATE_INNER(name)                                                      \
+  public:                                                                      \
+    name(Context *ctx) : State(ID_##name, ::millis, ctx) {}                    \
                                                                                \
-      private:                                                                 \
-        void initialize_impl() override;                                       \
-        State *loop_impl() override;                                           \
-    }
+  private:                                                                     \
+    void initialize_impl() override;                                           \
+    State *loop_impl() override;
 
-STATE(PreLaunch);
+class PreLaunch : public State {
+    STATE_INNER(PreLaunch)
+};
 
-STATE(Boost);
+class Boost : public State {
+    STATE_INNER(Boost)
+};
 
-STATE(Coast);
+class Coast : public State {
+    STATE_INNER(Coast)
 
-STATE(DrogueDescent);
+    float prevAltitude = 0;
+};
 
-STATE(MainDescent);
+class DrogueDescent : public State {
+    STATE_INNER(DrogueDescent)
 
-STATE(Recovery);
+    float prevAltitude = 0;
+};
 
-STATE(Abort);
+class MainDescent : public State {
+    STATE_INNER(MainDescent)
+};
+
+class Recovery : public State {
+    STATE_INNER(Recovery)
+};
+
+class Abort : public State {
+    STATE_INNER(Abort)
+};
