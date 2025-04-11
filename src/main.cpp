@@ -17,7 +17,7 @@ SdFat sd;
 File file;
 
 #define SD_CS PA15
-#define SD_SPI_SPEED SD_SCK_MHZ(4)
+#define SD_SPI_SPEED SD_SCK_MHZ(50)
 
 #define LED_PIN PB9
 
@@ -28,8 +28,7 @@ Context ctx = {
     .max10s = new MAX10S(),
 };
 
-Sensor *sensors[] = {ctx.accel, ctx.baro, ctx.icm, ctx.max10s};
-
+Sensor *sensors[] = {ctx.accel, ctx.baro, ctx.max10s};
 SensorManager<decltype(&millis), sizeof(sensors)/sizeof(Sensor*)> sensorManager(sensors, millis);
 
 StateMachine stateMachine((State *)new PreLaunch(&ctx));
@@ -38,38 +37,9 @@ bool sd_initialized = false;
 long lastTime = 0;
 bool state = true;
 
+long lastFlush = 0;
+
 uint8_t error_code;
-
-void setup() {
-    Serial.begin(9600);
-
-    // pinMode(PB9, OUTPUT);
-
-    Wire.begin();
-
-    stateMachine.initialize();
-    sensorManager.sensorInit();
-
-    // pinMode(LED_PIN, OUTPUT);
-
-    // sd_initialized = sd.begin(SD_CS, SD_SPI_SPEED);
-    // error_code = sd.card()->errorCode();
-
-    lastTime = millis();
-}
-
-void loop() {
-    stateMachine.loop();
-    sensorManager.loop();
-
-    // long now = millis();
-    // if (sd_initialized && now - lastTime >= 1000) {
-    //     lastTime = now;
-    //     state = !state;
-    // }
-    // digitalWrite(LED_PIN, state);
-    //
-}
 
 // Outputs the bits in the byte `data` in MSB order over `pin`
 void output_byte(uint8_t data, uint pin) {
@@ -92,3 +62,57 @@ void output_byte(uint8_t data, uint pin) {
 
     delay(1000);
 }
+
+void setup() {
+    Serial.begin(9600);
+
+    pinMode(PB9, OUTPUT);
+
+    Wire.setSCL(PB6);
+    Wire.setSDA(PB7);
+    Wire.begin();
+    SPI.setSCLK(PB3);
+    SPI.setMISO(PB4);
+    SPI.setMOSI(PB5);
+    SPI.begin();
+
+    stateMachine.initialize();
+    sensorManager.sensorInit();
+
+    Wire.setClock(400000);
+
+    pinMode(LED_PIN, OUTPUT);
+
+    sd_initialized = sd.begin(SD_CS, SD_SPI_SPEED);
+    error_code = sd.card()->errorCode();
+
+    lastTime = millis();
+
+    file = sd.open("test.txt", O_RDWR | O_CREAT | O_TRUNC);
+
+    lastFlush = millis();
+}
+
+void loop() {
+    stateMachine.loop();
+    sensorManager.loop();
+
+    ctx.accel->debugPrint(file);
+    ctx.baro->debugPrint(file);
+    ctx.max10s->debugPrint(file);
+
+    file.println(millis());
+
+    long now = millis();
+    if (sd_initialized && now - lastTime >= 250) {
+        lastTime = now;
+        state = !state;
+    }
+    digitalWrite(LED_PIN, state);
+
+    if (now - lastFlush >= 3000) {
+        lastFlush = now;
+        file.flush();
+    }
+}
+
