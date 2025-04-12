@@ -1,16 +1,20 @@
 #include <Arduino.h>
 
 #include "Context.h"
-#include "boilerplate/Sensors/Impl/Polaris/ICM42688.h"
-#include "boilerplate/Sensors/Impl/Polaris/MMC5983.h"
-#include "boilerplate/Sensors/Sensor/Sensor.h"
 #include "Wire.h"
+#include "boilerplate/Sensors/Sensor/Sensor.h"
+#include "pb.h"
 #include "states/States.h"
+#include <SPI.h>
 #include <boilerplate/Sensors/SensorManager/SensorManager.h>
 #include <boilerplate/StateMachine/StateMachine.h>
-#include <SPI.h>
 
 #include "config.h"
+
+#include "pb_decode.h"
+#include "pb_encode.h"
+#include "RocketTelemetryPacket.pb.h"
+#include "telemetry/XBeeProSX.h"
 
 #if defined(MARS)
 SdFat sd;
@@ -18,6 +22,18 @@ SdFat sd;
 File file;
 
 #define SD_SPI_SPEED SD_SCK_MHZ(50)
+
+HPRC_RocketTelemetryPacket packet = HPRC_RocketTelemetryPacket_init_zero;
+uint8_t buffer[4096];
+pb_ostream_t ostream = pb_ostream_from_buffer(buffer, sizeof(buffer));
+
+#if defined(MARS)
+SPIClass xbee_spi;
+#elif defined(POLARIS)
+SPIClass xbee_spi = SPI;
+#endif
+
+XbeeProSX xbee(XBEE_CS, &xbee_spi);
 
 Context ctx = {
 #if defined(MARS)
@@ -33,12 +49,13 @@ Context ctx = {
 };
 
 #if defined(MARS)
-    Sensor *sensors[] = {ctx.accel, ctx.baro, ctx.gps};
+Sensor *sensors[] = {ctx.accel, ctx.baro, ctx.gps};
 #elif defined(POLARIS)
-    Sensor *sensors[] = {ctx.accel, ctx.baro, ctx.mag, ctx.gps};
+Sensor *sensors[] = {ctx.accel, ctx.baro, ctx.mag, ctx.gps};
 #endif
 
-SensorManager<decltype(&millis), sizeof(sensors)/sizeof(Sensor*)> sensorManager(sensors, millis);
+SensorManager<decltype(&millis), sizeof(sensors) / sizeof(Sensor *)>
+    sensorManager(sensors, millis);
 
 StateMachine stateMachine((State *)new PreLaunch(&ctx));
 
@@ -80,6 +97,11 @@ void setup() {
     Wire.begin();
 
 #if defined(MARS)
+    xbee_spi.setSCLK(XBEE_SCLK);
+    xbee_spi.setMISO(XBEE_MISO);
+    xbee_spi.setMOSI(XBEE_MOSI);
+    xbee_spi.begin();
+
     SPI.setSCLK(SD_SCLK);
 #elif defined(POLARIS)
     SPI.setSCK(SD_SCLK);
@@ -94,6 +116,8 @@ void setup() {
     Wire.setClock(400000);
 
     pinMode(LED_PIN, OUTPUT);
+
+    xbee.start();
 
 #if defined(MARS)
     sd_initialized = sd.begin(SD_CS, SD_SPI_SPEED);
@@ -128,8 +152,14 @@ void loop() {
     digitalWrite(LED_PIN, state);
 
     if (now - lastFlush >= 3000) {
+        packet.timestamp = now;
+        packet.altitude = ctx.baro->getData().altitude;
+        pb_encode(&ostream, &HPRC_RocketTelemetryPacket_msg, &packet);
+        xbee_spi.beginTransaction(SPISettings(1000000, MSBFIRST, SPI_MODE0));
+        xbee.sendTransmitRequestCommand(0x0013A200423F474C, buffer, ostream.bytes_written);
+        xbee_spi.endTransaction();
+
         lastFlush = now;
         file.flush();
     }
 }
-

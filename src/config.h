@@ -13,6 +13,11 @@
     #define SD_MISO PB4
     #define SD_MOSI PB5
 
+    #define XBEE_CS PA4
+    #define XBEE_SCLK PA5
+    #define XBEE_MISO PA6
+    #define XBEE_MOSI PA7
+
     #define SENSOR_SCL PB6
     #define SENSOR_SDA PB7
 
