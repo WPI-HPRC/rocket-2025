@@ -35,6 +35,8 @@
     #define SD_MISO 12
     #define SD_MOSI 11
 
+    #define XBEE_CS 31
+
     #define SENSOR_SCL 19
     #define SENSOR_SDA 18
     
