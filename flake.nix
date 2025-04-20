@@ -12,7 +12,7 @@
     let
       pkgs = import inputs.nixpkgs { inherit system; };
     in {
-      devShells.default = pkgs.mkShell {
+      devShells.default = pkgs.mkShell rec {
         name = "platformio";
         venvDir = "./.venv";
         packages = with pkgs; [
@@ -23,7 +23,12 @@
             ];
           });})
           clang-tools
+          libusb1
         ];
+
+        shellHook = ''
+          export LD_LIBRARY_PATH="${pkgs.lib.makeLibraryPath packages}"
+        '';
       };
     }
   );

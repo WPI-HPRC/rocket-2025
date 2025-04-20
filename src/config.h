@@ -18,6 +18,8 @@
     #define XBEE_MISO PA6
     #define XBEE_MOSI PA7
 
+    #define XBEE_ATTN 33
+
     #define SENSOR_SCL PB6
     #define SENSOR_SDA PB7
 
@@ -35,8 +37,13 @@
     #define SD_MISO 12
     #define SD_MOSI 11
 
+    #define XBEE_CS 30
+    #define XBEE_ATTN 33
+
     #define SENSOR_SCL 19
     #define SENSOR_SDA 18
     
     #define LED_PIN 6
 #endif
+
+#define GROUNDSTATION_XBEE_ADDRESS 0x0013A200423F474C

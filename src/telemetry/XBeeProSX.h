@@ -3,13 +3,23 @@
 #include <Arduino.h>
 #include <SPI.h>
 
+#include "Context.h"
+#include "RocketTelemetryPacket.pb.h"
+#include "pb.h"
+#include "pb_decode.h"
+#include "pb_encode.h"
+#include "Packet.pb.h"
 #include "xbee/XBeeDevice.h"
 
 class XbeeProSX: public XBeeDevice {
 public:
-    XbeeProSX(uint8_t cs_pin, SPIClass* spi_dev);
+    XbeeProSX(Context *ctx, uint8_t cs_pin, uint8_t attn_pin, long long gs_addr, SPIClass* spi_dev, size_t send_delay = 200);
 
     void writeBytes_spi(char *data_io, size_t length_bytes) override;
+
+    void readBytes_spi(uint8_t *buffer, size_t length_bytes) override;
+
+    bool canReadSPI() override;
 
     void handleReceivePacket(XBee::ReceivePacket::Struct *frame) override;
 
@@ -19,15 +29,28 @@ public:
 
     void start() override;
 
+    void loop();
+
     void incorrectChecksum(uint8_t calculated, uint8_t received) override;
 
     void log(const char *format, ...) override;
 
-    void _handleTransmitStatus(uint8_t frameID, uint8_t statusCode) override;
-
 private:
+    Context *ctx;
     uint8_t _cs_pin;
+    uint8_t _attn_pin;
+    long long gs_addr;
     SPIClass* spi_dev;
+    size_t send_delay;
+    size_t last_sent;
+
+    uint8_t tx_buf[4096] = {};
+    pb_ostream_t ostream = pb_ostream_from_buffer(tx_buf, sizeof(tx_buf));
+    pb_istream_t istream;
+
+    HPRC_Packet final_packet;
+    HPRC_Telemetry_Message final_telem_packet;
+    HPRC_RocketTelemetryPacket *telem_packet;
 
     uint64_t subscribers[64];
     size_t num_subscribers;
