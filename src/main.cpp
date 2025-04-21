@@ -111,8 +111,8 @@ void setup() {
     SPI.setMOSI(SD_MOSI);
     SPI.begin();
 
-    while (!Serial)
-        delay(5);
+    // while (!Serial)
+    //     delay(5);
 
     stateMachine.initialize();
     sensorManager.sensorInit();
