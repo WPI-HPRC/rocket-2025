@@ -4,16 +4,17 @@
 #include <SPI.h>
 
 #include "Context.h"
+#include "Packet.pb.h"
 #include "RocketTelemetryPacket.pb.h"
 #include "pb.h"
 #include "pb_decode.h"
 #include "pb_encode.h"
-#include "Packet.pb.h"
 #include "xbee/XBeeDevice.h"
 
-class XbeeProSX: public XBeeDevice {
-public:
-    XbeeProSX(Context *ctx, uint8_t cs_pin, uint8_t attn_pin, long long gs_addr, SPIClass* spi_dev, size_t send_delay = 200);
+class XbeeProSX : public XBeeDevice {
+  public:
+    XbeeProSX(Context *ctx, uint8_t cs_pin, uint8_t attn_pin, long long gs_addr,
+              SPIClass *spi_dev, size_t send_delay = 200);
 
     void writeBytes_spi(char *data_io, size_t length_bytes) override;
 
@@ -23,7 +24,8 @@ public:
 
     void handleReceivePacket(XBee::ReceivePacket::Struct *frame) override;
 
-    void handleReceivePacket64Bit(XBee::ReceivePacket64Bit::Struct *frame) override;
+    void
+    handleReceivePacket64Bit(XBee::ReceivePacket64Bit::Struct *frame) override;
 
     void didCycle() override;
 
@@ -35,12 +37,12 @@ public:
 
     void log(const char *format, ...) override;
 
-private:
+  private:
     Context *ctx;
     uint8_t _cs_pin;
     uint8_t _attn_pin;
     long long gs_addr;
-    SPIClass* spi_dev;
+    SPIClass *spi_dev;
     size_t send_delay;
     size_t last_sent;
 
@@ -49,8 +51,12 @@ private:
     pb_istream_t istream;
 
     HPRC_Packet final_packet;
-    HPRC_Telemetry_Message final_telem_packet;
+    HPRC_Telemetry final_telem_packet;
     HPRC_RocketTelemetryPacket *telem_packet;
+
+    HPRC_Command rx_command_packet;
+    HPRC_CommandResponse tx_command_response;
+    bool command_response_to_send = false;
 
     uint64_t subscribers[64];
     size_t num_subscribers;

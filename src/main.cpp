@@ -2,6 +2,7 @@
 
 #include "Context.h"
 #include "Wire.h"
+#include "airbrakes/AirbrakeController.h"
 #include "boilerplate/Sensors/Sensor/Sensor.h"
 #include "pb.h"
 #include "states/States.h"
@@ -20,7 +21,7 @@ SdFat sd;
 #define SD_SPI_SPEED SD_SCK_MHZ(50)
 
 #if defined(MARS)
-SPIClass xbee_spi;
+SPIClass xbee_spi(XBEE_MOSI, XBEE_MISO, XBEE_SCLK);
 #elif defined(POLARIS)
 SPIClass xbee_spi = SPI;
 #endif
@@ -36,6 +37,7 @@ Context ctx = {
     .mag = MMC5983(),
 #endif
     .gps = MAX10S(),
+    .airbrakes = AirbrakeController(AIRBRAKE_SERVO_PIN, AIRBRAKE_FEEDBACK_PIN),
     .flightMode = false,
 };
 
@@ -84,6 +86,16 @@ void output_byte(uint8_t data, uint pin) {
 }
 
 void setup() {
+#if defined(MARS)
+    // P_Good pins
+    pinMode(PE0, OUTPUT); // PG3V3_LED
+    pinMode(PE1, OUTPUT); // PG5V_LED
+    pinMode(PA3, INPUT);  // PG3V3
+    pinMode(PC4, INPUT);  // PG5V
+
+    digitalWrite(PE0, digitalRead(PA3));
+    digitalWrite(PE1, digitalRead(PC4));
+#endif
     Serial.begin(9600);
 
     Wire.setSCL(SENSOR_SCL);
@@ -91,11 +103,6 @@ void setup() {
     Wire.begin();
 
 #if defined(MARS)
-    // xbee_spi.setSCLK(XBEE_SCLK);
-    // xbee_spi.setMISO(XBEE_MISO);
-    // xbee_spi.setMOSI(XBEE_MOSI);
-    // xbee_spi.begin();
-
     SPI.setSCLK(SD_SCLK);
 #elif defined(POLARIS)
     SPI.setSCK(SD_SCLK);
@@ -104,7 +111,8 @@ void setup() {
     SPI.setMOSI(SD_MOSI);
     SPI.begin();
 
-    // while (!Serial) delay(5);
+    while (!Serial)
+        delay(5);
 
     stateMachine.initialize();
     sensorManager.sensorInit();
@@ -113,48 +121,79 @@ void setup() {
 
     pinMode(LED_PIN, OUTPUT);
 
-    xbee.start();
-
 #if defined(MARS)
     sd_initialized = sd.begin(SD_CS, SD_SPI_SPEED);
-    error_code = sd.card()->errorCode();
+    // error_code = sd.card()->errorCode();
 
-    ctx.logFile = sd.open("test.txt", O_RDWR | O_CREAT | O_TRUNC);
+    // Serial.printf("%d %d\n", sd_initialized, error_code);
 #elif defined(POLARIS)
     sd_initialized = SD.begin(SD_CS);
-
-    ctx.logFile = SD.open("test.txt", FILE_WRITE_BEGIN);
 #endif
+
+    if (sd_initialized) {
+        int fileIdx = 0;
+        char filename[100];
+        while (fileIdx < 100) {
+            sprintf(filename, "flightData%d.bin", fileIdx++);
+
+            Serial.printf("Trying file `%s`\n", filename);
+#if defined(MARS)
+            if (!sd.exists(filename)) {
+                ctx.logFile = sd.open(filename, O_RDWR | O_CREAT | O_TRUNC);
+                break;
+            }
+#elif defined(POLARIS)
+            if (!SD.exists(filename)) {
+                ctx.logFile = SD.open(filename, FILE_WRITE_BEGIN);
+                break;
+            }
+#endif
+        }
+    }
+
+#if defined(MARS)
+    xbee_spi.begin();
+#endif
+
+    xbee.start();
 
     lastTime = millis();
     lastFlush = millis();
 }
 
 void loop() {
+#if defined(MARS)
+    digitalWrite(PE0, digitalRead(PA3));
+    digitalWrite(PE1, digitalRead(PC4));
+#endif
     stateMachine.loop();
     sensorManager.loop();
     xbee.loop();
 
-    ctx.accel.debugPrint(ctx.logFile);
-    ctx.baro.debugPrint(ctx.logFile);
-    ctx.gps.debugPrint(ctx.logFile);
-    ctx.mag.debugPrint(ctx.logFile);
-    ctx.accel.debugPrint(Serial);
-    ctx.baro.debugPrint(Serial);
-    ctx.gps.debugPrint(Serial);
-    ctx.mag.debugPrint(Serial);
-
     long now = millis();
-    if (sd_initialized && now - lastTime >= 250) {
+    if (now - lastTime >= 250) {
         lastTime = now;
-        state = !state;
+
+        ctx.accel.debugPrint(Serial);
+        ctx.baro.debugPrint(Serial);
+        ctx.gps.debugPrint(Serial);
+        ctx.mag.debugPrint(Serial);
+        // Serial.print("Flight mode: "); Serial.println(ctx.flightMode);
+
+        if (sd_initialized) {
+            state = !state;
+            ctx.accel.debugPrint(ctx.logFile);
+            ctx.baro.debugPrint(ctx.logFile);
+            ctx.gps.debugPrint(ctx.logFile);
+            ctx.mag.debugPrint(ctx.logFile);
+        }
     }
     digitalWrite(LED_PIN, state);
 
-    if (now - lastFlush >= 50) {
+    if (now - lastFlush >= 1000) {
         lastFlush = now;
         ctx.logFile.flush();
     }
 
-    delay(10);
+    delay(1);
 }

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "airbrakes/AirbrakeController.h"
 #include "config.h"
 
 struct Context {
@@ -13,6 +14,7 @@ struct Context {
     MMC5983 mag;
 #endif
     MAX10S gps;
+    AirbrakeController airbrakes;
     File logFile;
     bool flightMode;
 };

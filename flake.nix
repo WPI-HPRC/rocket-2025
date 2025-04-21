@@ -12,7 +12,7 @@
     let
       pkgs = import inputs.nixpkgs { inherit system; };
     in {
-      devShells.default = pkgs.mkShell rec {
+      devShells.default = pkgs.mkShell.override { stdenv = pkgs.gccMultiStdenv; } rec {
         name = "platformio";
         venvDir = "./.venv";
         packages = with pkgs; [
@@ -24,6 +24,7 @@
           });})
           clang-tools
           libusb1
+          glibc_multi
         ];
 
         shellHook = ''

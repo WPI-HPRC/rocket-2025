@@ -14,14 +14,17 @@
     #define SD_MOSI PB5
 
     #define XBEE_CS PA4
-    #define XBEE_SCLK PA5
-    #define XBEE_MISO PA6
-    #define XBEE_MOSI PA7
+    #define XBEE_SCLK PA5_ALT1
+    #define XBEE_MISO PA6_ALT1
+    #define XBEE_MOSI PA7_ALT1
 
-    #define XBEE_ATTN 33
+    #define XBEE_ATTN PD8
 
     #define SENSOR_SCL PB6
     #define SENSOR_SDA PB7
+
+    #define AIRBRAKE_SERVO_PIN PC11
+    #define AIRBRAKE_FEEDBACK_PIN PC12
 
     #define LED_PIN PB9
 #elif defined(POLARIS)
@@ -42,6 +45,9 @@
 
     #define SENSOR_SCL 19
     #define SENSOR_SDA 18
+
+    #define AIRBRAKE_SERVO_PIN 7
+    #define AIRBRAKE_FEEDBACK_PIN 20
     
     #define LED_PIN 6
 #endif
