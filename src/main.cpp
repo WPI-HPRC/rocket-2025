@@ -93,6 +93,8 @@ void setup() {
 #endif
     Serial.begin(9600);
 
+    ctx.airbrakes.init();
+
     Wire.setSCL(SENSOR_SCL);
     Wire.setSDA(SENSOR_SDA);
     Wire.begin();
