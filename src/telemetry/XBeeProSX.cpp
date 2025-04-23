@@ -1,4 +1,5 @@
 #include "XBeeProSX.h"
+#include "CStringBuilder.h"
 #include "Command.pb.h"
 #include "CommandResponse.pb.h"
 #include "Packet.pb.h"
@@ -12,7 +13,9 @@ XbeeProSX::XbeeProSX(Context *ctx, uint8_t cs_pin, uint8_t attn_pin,
     : XBeeDevice(SerialInterface::SPI), ctx(ctx), _cs_pin(cs_pin),
       _attn_pin(attn_pin), gs_addr(gs_addr), spi_dev(spi_dev),
       send_delay(send_delay),
-      telem_packet(&final_telem_packet.Message.rocketPacket) {
+      telem_packet(&final_telem_packet.Message.rocketPacket),
+      rx_command(&rx_packet.Message.command),
+      sb(CStringBuilder((char *)ls_buf, sizeof(tx_buf))) {
     sendTransmitRequestsImmediately = true;
     sendFramesImmediately = true;
 
@@ -60,15 +63,17 @@ void XbeeProSX::handleReceivePacket(XBee::ReceivePacket::Struct *frame) {
         return;
     }
 
-    Serial.println("recvd");
+    for (int i = 0; i < frame->dataLength_bytes; i++) {
+        Serial.printf("0x%x ", frame->data[i]);
+    }
+    Serial.println();
 
     istream = pb_istream_from_buffer(frame->data, frame->dataLength_bytes);
-    if (pb_decode(&istream, &HPRC_Command_msg, &rx_command_packet)) {
+    if (pb_decode(&istream, &HPRC_Packet_msg, &rx_packet)) {
         bool response_to_send = false;
-        switch (rx_command_packet.which_Message) {
+        switch (rx_command->which_Message) {
         case HPRC_Command_setFlightMode_tag:
-            ctx->flightMode =
-                rx_command_packet.Message.setFlightMode.flightModeOn;
+            ctx->flightMode = rx_command->Message.setFlightMode.flightModeOn;
 
             tx_command_response.which_Message =
                 HPRC_CommandResponse_setFlightMode_tag;
@@ -76,18 +81,58 @@ void XbeeProSX::handleReceivePacket(XBee::ReceivePacket::Struct *frame) {
             response_to_send = true;
             break;
         case HPRC_Command_actuateAirbrakes_tag:
-            Serial.printf(
-                "Servo command value: %ud\n",
-                rx_command_packet.Message.actuateAirbrakes.servoValue);
+            Serial.printf("Servo command value: %u\n",
+                          rx_command->Message.actuateAirbrakes.servoValue);
             ctx->airbrakes.write(
-                rx_command_packet.Message.actuateAirbrakes.servoValue);
+                rx_command->Message.actuateAirbrakes.servoValue);
             break;
         case HPRC_Command_readSDDirectory_tag:
-            break;
+#if defined(MARS)
+        {
+            Serial.println("Reading SD Directory");
+            sb.reset();
+            ctx->sd.ls(&sb, LS_SIZE);
+            tx_command_response.which_Message =
+                HPRC_CommandResponse_readSDDirectory_tag;
+            tx_command_response.Message.readSDDirectory.filename.arg = ls_buf;
+            tx_command_response.Message.readSDDirectory.filename.funcs.encode =
+                [](pb_ostream_t *s, const pb_field_t *f,
+                   void *const *arg) -> bool {
+                char *buf = (char *)*arg;
+                char *real_end = strchr(buf, '\0');
+                char *end;
+                while (buf < real_end) {
+                    end = strchr(buf, '\n');
+                    if (!pb_encode_tag_for_field(s, f)) {
+                        return false;
+                    }
+                    if (!pb_encode_string(s, (const pb_byte_t *)buf,
+                                          end - buf)) {
+                        return false;
+                    }
+                    buf = end + 1;
+                }
+                return true;
+            };
+            response_to_send = true;
+        }
+#endif
+        break;
         case HPRC_Command_readSDFile_tag:
             break;
-        case HPRC_Command_clearSD_tag:
-            break;
+        case HPRC_Command_clearSD_tag: {
+            ctx->logFile.close();
+            bool success = ctx->sd.format();
+            success &= ctx->sd.begin(SD_CS, SD_SPI_SPEED);
+
+            ctx->logFile =
+                ctx->sd.open("flightData0.bin", O_RDWR | O_CREAT | O_TRUNC);
+
+            tx_command_response.which_Message =
+                HPRC_CommandResponse_clearSD_tag;
+            tx_command_response.Message.clearSD.success = success;
+            response_to_send = true;
+        } break;
         case HPRC_Command_setVideoActive_tag:
             tx_command_response.which_Message =
                 HPRC_CommandResponse_setVideoActive_tag;
@@ -103,6 +148,7 @@ void XbeeProSX::handleReceivePacket(XBee::ReceivePacket::Struct *frame) {
             final_packet.Message.commandResponse = tx_command_response;
             ostream = pb_ostream_from_buffer(tx_buf, sizeof(tx_buf));
             pb_encode(&ostream, &HPRC_Packet_msg, &final_packet);
+            Serial.println();
             spi_dev->beginTransaction(
                 SPISettings(1000000, MSBFIRST, SPI_MODE0));
             sendTransmitRequestCommand(gs_addr, tx_buf, ostream.bytes_written);

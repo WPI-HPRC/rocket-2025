@@ -8,6 +8,8 @@
 
     #include "SdFat.h"
 
+    #define SD_SPI_SPEED SD_SCK_MHZ(50)
+
     #define SD_CS PA15
     #define SD_SCLK PB3
     #define SD_MISO PB4

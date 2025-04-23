@@ -15,12 +15,6 @@
 #include "telemetry/XBeeProSX.h"
 
 #if defined(MARS)
-SdFat sd;
-#endif
-
-#define SD_SPI_SPEED SD_SCK_MHZ(50)
-
-#if defined(MARS)
 SPIClass xbee_spi(XBEE_MOSI, XBEE_MISO, XBEE_SCLK);
 #elif defined(POLARIS)
 SPIClass xbee_spi = SPI;
@@ -31,6 +25,7 @@ Context ctx = {
     .accel = ASM330(),
     .baro = LPS22(),
     .mag = ICM20948(),
+    .sd = SdFat(),
 #elif defined(POLARIS)
     .accel = ICM42688_(),
     .baro = MS5611(),
@@ -122,7 +117,7 @@ void setup() {
     pinMode(LED_PIN, OUTPUT);
 
 #if defined(MARS)
-    sd_initialized = sd.begin(SD_CS, SD_SPI_SPEED);
+    sd_initialized = ctx.sd.begin(SD_CS, SD_SPI_SPEED);
     // error_code = sd.card()->errorCode();
 
     // Serial.printf("%d %d\n", sd_initialized, error_code);
@@ -138,8 +133,8 @@ void setup() {
 
             Serial.printf("Trying file `%s`\n", filename);
 #if defined(MARS)
-            if (!sd.exists(filename)) {
-                ctx.logFile = sd.open(filename, O_RDWR | O_CREAT | O_TRUNC);
+            if (!ctx.sd.exists(filename)) {
+                ctx.logFile = ctx.sd.open(filename, O_RDWR | O_CREAT | O_TRUNC);
                 break;
             }
 #elif defined(POLARIS)
@@ -174,14 +169,15 @@ void loop() {
     if (now - lastTime >= 250) {
         lastTime = now;
 
-        ctx.accel.debugPrint(Serial);
-        ctx.baro.debugPrint(Serial);
-        ctx.gps.debugPrint(Serial);
-        ctx.mag.debugPrint(Serial);
+        // ctx.accel.debugPrint(Serial);
+        // ctx.baro.debugPrint(Serial);
+        // ctx.gps.debugPrint(Serial);
+        // ctx.mag.debugPrint(Serial);
         // Serial.print("Flight mode: "); Serial.println(ctx.flightMode);
 
         if (sd_initialized) {
             state = !state;
+            ctx.logFile.println(millis());
             ctx.accel.debugPrint(ctx.logFile);
             ctx.baro.debugPrint(ctx.logFile);
             ctx.gps.debugPrint(ctx.logFile);

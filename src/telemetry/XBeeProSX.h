@@ -3,6 +3,7 @@
 #include <Arduino.h>
 #include <SPI.h>
 
+#include "CStringBuilder.h"
 #include "Context.h"
 #include "Packet.pb.h"
 #include "RocketTelemetryPacket.pb.h"
@@ -54,9 +55,13 @@ class XbeeProSX : public XBeeDevice {
     HPRC_Telemetry final_telem_packet;
     HPRC_RocketTelemetryPacket *telem_packet;
 
-    HPRC_Command rx_command_packet;
+    HPRC_Packet rx_packet;
+    HPRC_Command *rx_command;
     HPRC_CommandResponse tx_command_response;
     bool command_response_to_send = false;
+
+    uint8_t ls_buf[4096] = {};
+    CStringBuilder sb;
 
     uint64_t subscribers[64];
     size_t num_subscribers;

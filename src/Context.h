@@ -8,6 +8,7 @@ struct Context {
     ASM330 accel;
     LPS22 baro;
     ICM20948 mag;
+    SdFat sd;
 #elif defined(POLARIS)
     ICM42688_ accel;
     MS5611 baro;
