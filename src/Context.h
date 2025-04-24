@@ -1,13 +1,21 @@
 #pragma once
 
-#include "boilerplate/Sensors/Impl/ASM330.h"
-#include "boilerplate/Sensors/Impl/ICM20948.h"
-#include "boilerplate/Sensors/Impl/LPS22.h"
-#include "boilerplate/Sensors/Impl/MAX10S.h"
+#include "airbrakes/AirbrakeController.h"
+#include "config.h"
 
 struct Context {
-  ASM330* accel;
-  Barometer* baro;
-  ICM20948* icm;
-  MAX10S* max10s;
+#if defined(MARS)
+    ASM330 accel;
+    LPS22 baro;
+    ICM20948 mag;
+    SdFat sd;
+#elif defined(POLARIS)
+    ICM42688_ accel;
+    MS5611 baro;
+    MMC5983 mag;
+#endif
+    MAX10S gps;
+    AirbrakeController airbrakes;
+    File logFile;
+    bool flightMode;
 };

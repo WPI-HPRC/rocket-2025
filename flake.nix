@@ -12,12 +12,24 @@
     let
       pkgs = import inputs.nixpkgs { inherit system; };
     in {
-      devShells.default = pkgs.mkShell {
+      devShells.default = pkgs.mkShell.override { stdenv = pkgs.gccMultiStdenv; } rec {
         name = "platformio";
+        venvDir = "./.venv";
         packages = with pkgs; [
-          platformio
+          (platformio.override { platformio-core = platformio-core.overrideAttrs (final: prev: {
+            propagatedBuildInputs = prev.propagatedBuildInputs ++ [
+              python3Packages.protobuf
+              python3Packages.grpcio-tools
+            ];
+          });})
           clang-tools
+          libusb1
+          glibc_multi
         ];
+
+        shellHook = ''
+          export LD_LIBRARY_PATH="${pkgs.lib.makeLibraryPath packages}"
+        '';
       };
     }
   );
