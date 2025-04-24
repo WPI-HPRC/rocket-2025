@@ -121,6 +121,7 @@ void XbeeProSX::handleReceivePacket(XBee::ReceivePacket::Struct *frame) {
         case HPRC_Command_readSDFile_tag:
             break;
         case HPRC_Command_clearSD_tag: {
+#if defined(MARS)
             ctx->logFile.close();
             bool success = ctx->sd.format();
             success &= ctx->sd.begin(SD_CS, SD_SPI_SPEED);
@@ -132,6 +133,7 @@ void XbeeProSX::handleReceivePacket(XBee::ReceivePacket::Struct *frame) {
                 HPRC_CommandResponse_clearSD_tag;
             tx_command_response.Message.clearSD.success = success;
             response_to_send = true;
+#endif
         } break;
         case HPRC_Command_setVideoActive_tag:
             tx_command_response.which_Message =

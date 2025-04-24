@@ -60,7 +60,7 @@ class XbeeProSX : public XBeeDevice {
     HPRC_CommandResponse tx_command_response;
     bool command_response_to_send = false;
 
-    uint8_t ls_buf[4096] = {};
+    uint8_t ls_buf[256] = {};
     CStringBuilder sb;
 
     uint64_t subscribers[64];
