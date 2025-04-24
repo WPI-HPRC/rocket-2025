@@ -25,12 +25,12 @@ Context ctx = {
     .accel = ASM330(),
     .baro = LPS22(),
     .mag = ICM20948(),
-    .sd = SdFat(),
 #elif defined(POLARIS)
     .accel = ICM42688_(),
     .baro = MS5611(),
     .mag = MMC5983(),
 #endif
+    .sd = SdFs(),
     .gps = MAX10S(),
     .airbrakes = AirbrakeController(AIRBRAKE_SERVO_PIN, AIRBRAKE_FEEDBACK_PIN),
     .flightMode = false,
@@ -118,14 +118,10 @@ void setup() {
 
     pinMode(LED_PIN, OUTPUT);
 
-#if defined(MARS)
     sd_initialized = ctx.sd.begin(SD_CS, SD_SPI_SPEED);
     // error_code = sd.card()->errorCode();
 
     // Serial.printf("%d %d\n", sd_initialized, error_code);
-#elif defined(POLARIS)
-    sd_initialized = SD.begin(SD_CS);
-#endif
 
     if (sd_initialized) {
         int fileIdx = 0;
@@ -134,18 +130,15 @@ void setup() {
             sprintf(filename, "flightData%d.bin", fileIdx++);
 
             Serial.printf("Trying file `%s`\n", filename);
-#if defined(MARS)
             if (!ctx.sd.exists(filename)) {
                 ctx.logFile = ctx.sd.open(filename, O_RDWR | O_CREAT | O_TRUNC);
                 break;
             }
-#elif defined(POLARIS)
-            if (!SD.exists(filename)) {
-                ctx.logFile = SD.open(filename, FILE_WRITE_BEGIN);
-                break;
-            }
-#endif
         }
+    }
+
+    if (ctx.logFile) {
+        ctx.logCsvHeader();
     }
 
 #if defined(MARS)
@@ -179,11 +172,16 @@ void loop() {
 
         if (sd_initialized) {
             state = !state;
-            ctx.logFile.println(millis());
-            ctx.accel.debugPrint(ctx.logFile);
-            ctx.baro.debugPrint(ctx.logFile);
-            ctx.gps.debugPrint(ctx.logFile);
-            ctx.mag.debugPrint(ctx.logFile);
+            ctx.logFile.print(millis());
+            ctx.logFile.print(",");
+            ctx.baro.logCsvRow(ctx.logFile);
+            ctx.logFile.print(",");
+            ctx.accel.logCsvRow(ctx.logFile);
+            ctx.logFile.print(",");
+            ctx.mag.logCsvRow(ctx.logFile);
+            ctx.logFile.print(",");
+            ctx.gps.logCsvRow(ctx.logFile);
+            ctx.logFile.println();
         }
     }
     digitalWrite(LED_PIN, state);

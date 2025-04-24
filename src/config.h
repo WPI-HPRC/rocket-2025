@@ -1,5 +1,7 @@
 #pragma once
 
+#define SD_SPI_SPEED SD_SCK_MHZ(50)
+
 #if defined(MARS)
     #include "boilerplate/Sensors/Impl/ASM330.h"
     #include "boilerplate/Sensors/Impl/ICM20948.h"
@@ -7,8 +9,6 @@
     #include "boilerplate/Sensors/Impl/MAX10S.h"
 
     #include "SdFat.h"
-
-    #define SD_SPI_SPEED SD_SCK_MHZ(50)
 
     #define SD_CS PA15
     #define SD_SCLK PB3
