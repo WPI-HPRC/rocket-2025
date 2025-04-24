@@ -87,9 +87,9 @@ void XbeeProSX::handleReceivePacket(XBee::ReceivePacket::Struct *frame) {
                 rx_command->Message.actuateAirbrakes.servoValue);
             break;
         case HPRC_Command_readSDDirectory_tag:
+            Serial.println("Reading SD Directory");
 #if defined(MARS)
         {
-            Serial.println("Reading SD Directory");
             sb.reset();
             ctx->sd.ls(&sb, LS_SIZE);
             tx_command_response.which_Message =
@@ -115,6 +115,21 @@ void XbeeProSX::handleReceivePacket(XBee::ReceivePacket::Struct *frame) {
                 return true;
             };
             response_to_send = true;
+        }
+#elif defined(POLARIS)
+        {
+            File root = SD.open("/");
+
+            int i = 0;
+            while (i < 200) {
+               File file = root.openNextFile();
+
+               if (!entry) {break;}
+
+               file.name(); // maybe use file.getName()?
+
+               i++;
+            }
         }
 #endif
         break;
