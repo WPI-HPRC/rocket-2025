@@ -86,10 +86,8 @@ void XbeeProSX::handleReceivePacket(XBee::ReceivePacket::Struct *frame) {
             ctx->airbrakes.write(
                 rx_command->Message.actuateAirbrakes.servoValue);
             break;
-        case HPRC_Command_readSDDirectory_tag:
+        case HPRC_Command_readSDDirectory_tag: {
             Serial.println("Reading SD Directory");
-#if defined(MARS)
-        {
             sb.reset();
             ctx->sd.ls(&sb, LS_SIZE);
             tx_command_response.which_Message =
@@ -115,24 +113,7 @@ void XbeeProSX::handleReceivePacket(XBee::ReceivePacket::Struct *frame) {
                 return true;
             };
             response_to_send = true;
-        }
-#elif defined(POLARIS)
-        {
-            File root = SD.open("/");
-
-            int i = 0;
-            while (i < 200) {
-               File file = root.openNextFile();
-
-               if (!entry) {break;}
-
-               file.name(); // maybe use file.getName()?
-
-               i++;
-            }
-        }
-#endif
-        break;
+        } break;
         case HPRC_Command_readSDFile_tag:
             break;
         case HPRC_Command_clearSD_tag: {
@@ -142,6 +123,8 @@ void XbeeProSX::handleReceivePacket(XBee::ReceivePacket::Struct *frame) {
 
             ctx->logFile =
                 ctx->sd.open("flightData0.bin", O_RDWR | O_CREAT | O_TRUNC);
+
+            ctx->logCsvHeader();
 
             tx_command_response.which_Message =
                 HPRC_CommandResponse_clearSD_tag;
