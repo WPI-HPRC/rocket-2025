@@ -14,8 +14,7 @@ XbeeProSX::XbeeProSX(Context *ctx, uint8_t cs_pin, uint8_t attn_pin,
       _attn_pin(attn_pin), gs_addr(gs_addr), spi_dev(spi_dev),
       send_delay(send_delay),
       telem_packet(&final_telem_packet.Message.rocketPacket),
-      rx_command(&rx_packet.Message.command),
-      sb(CStringBuilder((char *)ls_buf, sizeof(tx_buf))) {
+      rx_command(&rx_packet.Message.command) {
     sendTransmitRequestsImmediately = true;
     sendFramesImmediately = true;
 
@@ -88,28 +87,29 @@ void XbeeProSX::handleReceivePacket(XBee::ReceivePacket::Struct *frame) {
             break;
         case HPRC_Command_readSDDirectory_tag: {
             Serial.println("Reading SD Directory");
-            sb.reset();
-            ctx->sd.ls(&sb, LS_SIZE);
+
             tx_command_response.which_Message =
                 HPRC_CommandResponse_readSDDirectory_tag;
-            tx_command_response.Message.readSDDirectory.filename.arg = ls_buf;
+            tx_command_response.Message.readSDDirectory.filename.arg = &ctx->sd.open("/");
             tx_command_response.Message.readSDDirectory.filename.funcs.encode =
-                [](pb_ostream_t *s, const pb_field_t *f,
-                   void *const *arg) -> bool {
-                char *buf = (char *)*arg;
-                char *real_end = strchr(buf, '\0');
-                char *end;
-                while (buf < real_end) {
-                    end = strchr(buf, '\n');
+                [](pb_ostream_t *s, const pb_field_t *f, void *const *arg) -> bool {
+                SdFile *root = (SdFile *)*arg;
+                SdFile file;
+                static char name_buffer[255];
+                
+                while (file.openNext(root, O_READ)) {
                     if (!pb_encode_tag_for_field(s, f)) {
                         return false;
                     }
-                    if (!pb_encode_string(s, (const pb_byte_t *)buf,
-                                          end - buf)) {
+                    
+                    size_t name_len = file.getName(name_buffer, 256);
+                    if (!pb_encode_string(s, (const pb_byte_t *)name_buffer, name_len)) {
                         return false;
                     }
-                    buf = end + 1;
+
+                    file.close();
                 }
+
                 return true;
             };
             response_to_send = true;
