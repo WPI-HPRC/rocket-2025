@@ -60,6 +60,8 @@ class XbeeProSX : public XBeeDevice {
     HPRC_CommandResponse tx_command_response;
     bool command_response_to_send = false;
 
+    FsFile sd_root;
+
     uint64_t subscribers[64];
     size_t num_subscribers;
 

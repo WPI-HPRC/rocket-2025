@@ -25,12 +25,12 @@ Context ctx = {
     .accel = ASM330(),
     .baro = LPS22(),
     .mag = ICM20948(),
+    .sd = SdFs(),
 #elif defined(POLARIS)
     .accel = ICM42688_(),
     .baro = MS5611(),
     .mag = MMC5983(),
 #endif
-    .sd = SdFs(),
     .gps = MAX10S(),
     .airbrakes = AirbrakeController(AIRBRAKE_SERVO_PIN, AIRBRAKE_FEEDBACK_PIN),
     .flightMode = false,
@@ -118,8 +118,13 @@ void setup() {
 
     pinMode(LED_PIN, OUTPUT);
 
+#if defined(MARS)
     sd_initialized = ctx.sd.begin(SD_CS, SD_SPI_SPEED);
-    // error_code = sd.card()->errorCode();
+    error_code = ctx.sd.card()->errorCode();
+#elif defined(POLARIS)
+    sd_initialized = SD.begin(SD_CS);
+    // error_code = SD.sdfs.card()->errorCode();
+#endif
 
     // Serial.printf("%d %d\n", sd_initialized, error_code);
 
@@ -127,13 +132,20 @@ void setup() {
         int fileIdx = 0;
         char filename[100];
         while (fileIdx < 100) {
-            sprintf(filename, "flightData%d.bin", fileIdx++);
+            sprintf(filename, "flightData%d.csv", fileIdx++);
 
             Serial.printf("Trying file `%s`\n", filename);
+#if defined(MARS)
             if (!ctx.sd.exists(filename)) {
                 ctx.logFile = ctx.sd.open(filename, O_RDWR | O_CREAT | O_TRUNC);
                 break;
             }
+#elif defined(POLARIS)
+            if (!SD.exists(filename)) {
+                ctx.logFile = SD.open(filename, FILE_WRITE_BEGIN);
+                break;
+            }
+#endif
         }
     }
 
@@ -170,7 +182,7 @@ void loop() {
         // ctx.mag.debugPrint(Serial);
         // Serial.print("Flight mode: "); Serial.println(ctx.flightMode);
 
-        if (sd_initialized) {
+        if (sd_initialized && ctx.logFile) {
             state = !state;
             ctx.logFile.print(millis());
             ctx.logFile.print(",");

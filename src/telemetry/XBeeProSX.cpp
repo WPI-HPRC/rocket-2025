@@ -87,17 +87,22 @@ void XbeeProSX::handleReceivePacket(XBee::ReceivePacket::Struct *frame) {
             break;
         case HPRC_Command_readSDDirectory_tag: {
             Serial.println("Reading SD Directory");
-
             tx_command_response.which_Message =
                 HPRC_CommandResponse_readSDDirectory_tag;
-            tx_command_response.Message.readSDDirectory.filename.arg = &ctx->sd.open("/");
+#if defined(MARS)
+            sd_root = ctx->sd.open("/");
+#elif defined(POLARIS)
+            sd_root = SD.sdfs.open("/");
+#endif
+            tx_command_response.Message.readSDDirectory.filename.arg = &sd_root;
             tx_command_response.Message.readSDDirectory.filename.funcs.encode =
                 [](pb_ostream_t *s, const pb_field_t *f, void *const *arg) -> bool {
-                SdFile *root = (SdFile *)*arg;
-                SdFile file;
-                static char name_buffer[255];
+                FsFile *root = (FsFile *)*arg;
+                root->rewindDirectory();
+                FsFile file;
+                static char name_buffer[256];
                 
-                while (file.openNext(root, O_READ)) {
+                while ((file = root->openNextFile())) {
                     if (!pb_encode_tag_for_field(s, f)) {
                         return false;
                     }
@@ -118,11 +123,19 @@ void XbeeProSX::handleReceivePacket(XBee::ReceivePacket::Struct *frame) {
             break;
         case HPRC_Command_clearSD_tag: {
             ctx->logFile.close();
+#if defined(MARS)
             bool success = ctx->sd.format();
             success &= ctx->sd.begin(SD_CS, SD_SPI_SPEED);
 
             ctx->logFile =
-                ctx->sd.open("flightData0.bin", O_RDWR | O_CREAT | O_TRUNC);
+                ctx->sd.open("flightData0.csv", O_RDWR | O_CREAT | O_TRUNC);
+#elif defined(POLARIS)
+            bool success = SD.format();
+            success &= SD.begin(SD_CS);
+
+            ctx->logFile =
+                SD.open("flightData0.csv", FILE_WRITE_BEGIN);
+#endif
 
             ctx->logCsvHeader();
 
@@ -152,6 +165,8 @@ void XbeeProSX::handleReceivePacket(XBee::ReceivePacket::Struct *frame) {
             sendTransmitRequestCommand(gs_addr, tx_buf, ostream.bytes_written);
             spi_dev->endTransaction();
         }
+
+        sd_root.close();
     }
 }
 
