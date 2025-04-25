@@ -8,15 +8,15 @@ struct Context {
     ASM330 accel;
     LPS22 baro;
     ICM20948 mag;
+    SdFs sd;
 #elif defined(POLARIS)
     ICM42688_ accel;
     MS5611 baro;
     MMC5983 mag;
 #endif
-    SdFs sd;
     MAX10S gps;
     AirbrakeController airbrakes;
-    FsFile logFile;
+    File logFile;
     bool flightMode;
 
     void logCsvHeader() {
