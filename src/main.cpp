@@ -136,8 +136,8 @@ void setup() {
 
             Serial.printf("Trying file `%s`\n", filename);
 #if defined(MARS)
-            if (!ctx.sd->exists(filename)) {
-                ctx.logFile = ctx.sd->open(filename, O_RDWR | O_CREAT | O_TRUNC);
+            if (!ctx.sd.exists(filename)) {
+                ctx.logFile = ctx.sd.open(filename, O_RDWR | O_CREAT | O_TRUNC);
                 break;
             }
 #elif defined(POLARIS)
@@ -176,10 +176,10 @@ void loop() {
     if (now - lastTime >= 250) {
         lastTime = now;
 
-        // ctx.accel.debugPrint(Serial);
-        // ctx.baro.debugPrint(Serial);
-        // ctx.gps.debugPrint(Serial);
-        // ctx.mag.debugPrint(Serial);
+        ctx.accel.debugPrint(Serial);
+        ctx.baro.debugPrint(Serial);
+        ctx.gps.debugPrint(Serial);
+        ctx.mag.debugPrint(Serial);
         // Serial.print("Flight mode: "); Serial.println(ctx.flightMode);
 
         if (sd_initialized && ctx.logFile) {
