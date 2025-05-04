@@ -10,6 +10,8 @@
 #include <boilerplate/Sensors/SensorManager/SensorManager.h>
 #include <boilerplate/StateMachine/StateMachine.h>
 
+#include <StateEstimator/attEKF/attEkf.h>
+
 #include "config.h"
 
 #include "telemetry/XBeeProSX.h"
