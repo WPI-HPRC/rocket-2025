@@ -1,6 +1,7 @@
 #include <Arduino.h>
 
 #include "Context.h"
+#include "HardwareTimer.h"
 #include "Wire.h"
 #include "airbrakes/AirbrakeController.h"
 #include "boilerplate/Sensors/Sensor/Sensor.h"
@@ -51,12 +52,7 @@ SensorManager<decltype(&millis), sizeof(sensors) / sizeof(Sensor *)>
 StateMachine stateMachine((State *)new PreLaunch(&ctx));
 
 bool sd_initialized = false;
-long lastTime = 0;
 bool state = true;
-
-long lastFlush = 0;
-
-uint8_t error_code;
 
 // Outputs the bits in the byte `data` in MSB order over `pin`
 void output_byte(uint8_t data, uint pin) {
@@ -79,6 +75,64 @@ void output_byte(uint8_t data, uint pin) {
 
     delay(1000);
 }
+
+void loop10ms(); // Main update
+void loop25ms(); // EKF
+void loop250ms(); // Logging (not called when flightMode is set)
+void loop1000ms(); // SD Flush
+
+void timeHandler() {
+    static uint64_t lastCall10ms = 0;
+    static uint64_t lastCall1000ms = 0;
+
+    bool run10ms = false;
+    bool run1000ms = false;
+
+    uint64_t now = micros();
+    if (now - lastCall10ms >= 10000) {
+        lastCall10ms = now;
+        run10ms = true;
+    }
+    if (now - lastCall1000ms >= 1000000) {
+        lastCall1000ms = now;
+        run1000ms = true;
+    }
+
+    if (run10ms) {
+        loop10ms();
+    }
+    if (run1000ms) {
+        loop1000ms();
+    }
+}
+
+void lowPrioTimeHandler() {
+    static uint64_t lastCall25ms = 0;
+    static uint64_t lastCall250ms = 0;
+
+    bool run25ms = false;
+    bool run250ms = false;
+
+    uint64_t now = micros();
+    if (now - lastCall25ms >= 25000) {
+        lastCall25ms = now;
+        run25ms = true;
+    }
+    if (!ctx.flightMode && now - lastCall250ms >= 250000) {
+        lastCall250ms = now;
+        run250ms = true;
+    }
+
+    if (run25ms) {
+        loop25ms();
+    }
+    if (run250ms) {
+        loop250ms();
+    }
+}
+
+HardwareTimer loopTimer(TIM2);
+HardwareTimer lowPrioTimer(TIM3);
 
 void setup() {
 #if defined(MARS)
@@ -120,13 +174,9 @@ void setup() {
 
 #if defined(MARS)
     sd_initialized = ctx.sd.begin(SD_CS, SD_SPI_SPEED);
-    error_code = ctx.sd.card()->errorCode();
 #elif defined(POLARIS)
     sd_initialized = SD.begin(SD_CS);
-    // error_code = SD.sdfs.card()->errorCode();
 #endif
-
-    // Serial.printf("%d %d\n", sd_initialized, error_code);
 
     if (sd_initialized) {
         int fileIdx = 0;
@@ -159,49 +209,59 @@ void setup() {
 
     xbee.start();
 
-    lastTime = millis();
-    lastFlush = millis();
+    loopTimer.setOverflow(10, MICROSEC_FORMAT);
+    loopTimer.attachInterrupt(timeHandler);
+    loopTimer.setInterruptPriority(10, 0);
+
+    lowPrioTimer.setOverflow(500, MICROSEC_FORMAT);
+    lowPrioTimer.attachInterrupt(lowPrioTimeHandler);
+    lowPrioTimer.setInterruptPriority(11, 0);
+
+    loopTimer.resume();
+    lowPrioTimer.resume();
 }
 
-void loop() {
+void loop10ms() {
 #if defined(MARS)
     digitalWrite(PE0, digitalRead(PA3));
     digitalWrite(PE1, digitalRead(PC4));
 #endif
+
     stateMachine.loop();
     sensorManager.loop();
     xbee.loop();
 
-    long now = millis();
-    if (now - lastTime >= 250) {
-        lastTime = now;
-
-        ctx.accel.debugPrint(Serial);
-        ctx.baro.debugPrint(Serial);
-        ctx.gps.debugPrint(Serial);
-        ctx.mag.debugPrint(Serial);
-        // Serial.print("Flight mode: "); Serial.println(ctx.flightMode);
-
-        if (sd_initialized && ctx.logFile) {
-            state = !state;
-            ctx.logFile.print(millis());
-            ctx.logFile.print(",");
-            ctx.baro.logCsvRow(ctx.logFile);
-            ctx.logFile.print(",");
-            ctx.accel.logCsvRow(ctx.logFile);
-            ctx.logFile.print(",");
-            ctx.mag.logCsvRow(ctx.logFile);
-            ctx.logFile.print(",");
-            ctx.gps.logCsvRow(ctx.logFile);
-            ctx.logFile.println();
-        }
+    if (sd_initialized && ctx.logFile) {
+        ctx.logFile.print(millis());
+        ctx.logFile.print(",");
+        ctx.baro.logCsvRow(ctx.logFile);
+        ctx.logFile.print(",");
+        ctx.accel.logCsvRow(ctx.logFile);
+        ctx.logFile.print(",");
+        ctx.mag.logCsvRow(ctx.logFile);
+        ctx.logFile.print(",");
+        ctx.gps.logCsvRow(ctx.logFile);
+        ctx.logFile.println();
     }
-    digitalWrite(LED_PIN, state);
-
-    if (now - lastFlush >= 1000) {
-        lastFlush = now;
-        ctx.logFile.flush();
-    }
-
-    delay(1);
 }
+
+void loop25ms() {
+}
+
+void loop250ms() {
+    ctx.accel.debugPrint(Serial);
+    ctx.baro.debugPrint(Serial);
+    ctx.gps.debugPrint(Serial);
+    ctx.mag.debugPrint(Serial);
+
+    if (sd_initialized && ctx.logFile) {
+        state = !state;
+    }
+    digitalWrite(LED_PIN, state);    
+}
+
+void loop1000ms() {
+    ctx.logFile.flush();
+}
+
+void loop() {}

@@ -164,7 +164,6 @@ void XbeeProSX::handleReceivePacket(XBee::ReceivePacket::Struct *frame) {
             final_packet.Message.commandResponse = tx_command_response;
             ostream = pb_ostream_from_buffer(tx_buf, sizeof(tx_buf));
             pb_encode(&ostream, &HPRC_Packet_msg, &final_packet);
-            Serial.println();
             spi_dev->beginTransaction(
                 SPISettings(1000000, MSBFIRST, SPI_MODE0));
             sendTransmitRequestCommand(gs_addr, tx_buf, ostream.bytes_written);
