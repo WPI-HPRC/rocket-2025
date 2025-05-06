@@ -58,7 +58,7 @@ class AttStateEstimator {
      * @brief Run Every Loop
      * @paragraph This method should run every loop of the expected prediction update rate given by dt
      */
-    void onLoop(Context &ctx);
+    BLA::Matrix<13,1> onLoop(Context &ctx);
 
     private:
 
@@ -104,9 +104,9 @@ class AttStateEstimator {
     // Gravity Update
     // BLA::Matrix<3,3> R_grav = BLA::Eye<3>() * asm330_const.accelXYZ_var;
     BLA::Matrix<3,3> R_grav = {
-        asm330_const.accelXY_var, 0, 0,
-        0, asm330_const.accelXY_var, 0,
-        0, 0, asm330_const.accelZ_var
+        asm330_const.accelXY_var + 0.01, 0, 0,
+        0, asm330_const.accelXY_var + 0.01, 0,
+        0, 0, asm330_const.accelZ_var + 0.01
     };
 
     BLA::Matrix<3,3> R_mag = I_3 * icm20948_const.magXYZ_var;

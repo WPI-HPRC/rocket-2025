@@ -2,6 +2,7 @@
 
 #include "airbrakes/AirbrakeController.h"
 #include "config.h"
+#include "BasicLinearAlgebra.h"
 
 struct Context {
 #if defined(MARS)
@@ -18,6 +19,14 @@ struct Context {
     AirbrakeController airbrakes;
     File logFile;
     bool flightMode;
+
+    float q_w;
+    float q_x;
+    float q_y;
+    float q_z;
+
+    BLA::Matrix<13,1> quatState;
+    BLA::Matrix<13,13> P;
 
     void logCsvHeader() {
         logFile.print("timestamp,");

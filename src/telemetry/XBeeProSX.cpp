@@ -42,6 +42,19 @@ void XbeeProSX::loop() {
         telem_packet->satellites = ctx->gps.getData().satellites;
         telem_packet->gpsLock = ctx->gps.getData().gpsLockType == 3;
         telem_packet->gpsAltMSL = ctx->gps.getData().altMSL;
+        telem_packet->w = ctx->q_w;
+        telem_packet->i = ctx->q_x;
+        telem_packet->j = ctx->q_y;
+        telem_packet->k = ctx->q_z;
+        telem_packet->accelX = ctx->mag.getData().accelX;
+        telem_packet->accelY = ctx->mag.getData().accelY;
+        telem_packet->accelZ = ctx->mag.getData().accelZ;
+        telem_packet->gyroX  = ctx->mag.getData().gyrX;
+        telem_packet->gyroY  = ctx->mag.getData().gyrY;
+        telem_packet->gyroZ  = ctx->mag.getData().gyrZ;
+        telem_packet->magX  = ctx->mag.getData().magX;
+        telem_packet->magY  = ctx->mag.getData().magY;
+        telem_packet->magZ  = ctx->mag.getData().magZ;
 
         // Send packet
         final_packet.which_Message = HPRC_Packet_telemetry_tag;

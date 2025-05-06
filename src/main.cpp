@@ -54,11 +54,15 @@ StateMachine stateMachine((State *)new PreLaunch(&ctx));
 
 bool sd_initialized = false;
 long lastTime = 0;
+long lastTimeEkf = 0;
 bool state = true;
+
+bool ekfInitialized = false;
 
 long lastFlush = 0;
 
 uint8_t error_code;
+
 
 // Outputs the bits in the byte `data` in MSB order over `pin`
 void output_byte(uint8_t data, uint pin) {
@@ -81,6 +85,8 @@ void output_byte(uint8_t data, uint pin) {
 
     delay(1000);
 }
+
+AttStateEstimator quatEkf = AttStateEstimator();
 
 void setup() {
 #if defined(MARS)
@@ -163,6 +169,35 @@ void setup() {
 
     lastTime = millis();
     lastFlush = millis();
+
+    // Intialize Quaternion
+    // BLA::Matrix<13,1> xq_0 = {0.8776, 0, 0.4794, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001};
+
+    // quatEkf.init(xq_0, 0.01);
+}
+
+BLA::Matrix<4,1> quatFromTwoVectors(BLA::Matrix<3,1> a, BLA::Matrix<3,1> b) {
+    a = a / BLA::Norm(a);
+    b = b / BLA::Norm(b);
+
+    float dot_ab = (BLA::MatrixTranspose<BLA::Matrix<3,1>>(a) * b)(0);
+
+    BLA::Matrix<3,1> cross_ab = {
+        a(1)*b(2) - a(2)*b(1),
+        a(2)*b(0) - a(0)*b(2),
+        a(0)*b(1) - a(1)*b(0)
+    };
+
+    float w = sqrt((1 + dot_ab) * 0.5f);
+    float f = 1.0f / (2.0f * w);
+    BLA::Matrix<4,1> q = {
+        w,
+        cross_ab(0) * f,
+        cross_ab(1) * f,
+        cross_ab(2) * f
+    };
+
+    return q / BLA::Norm(q);
 }
 
 void loop() {
@@ -175,14 +210,78 @@ void loop() {
     xbee.loop();
 
     long now = millis();
-    if (now - lastTime >= 250) {
+
+    if(!ekfInitialized) {
+        BLA::Matrix<3,1> a_b = {
+            ctx.mag.getData().accelX,
+            ctx.mag.getData().accelY,
+            ctx.mag.getData().accelZ
+        };
+
+        a_b = a_b / BLA::Norm(a_b);
+
+        BLA::Matrix<3,1> z_ned = {0, 0, -9.80665};
+
+        BLA::Matrix<4,1> q0 = quatFromTwoVectors(a_b, z_ned);
+
+        BLA::Matrix<13,1> x0 = {q0(0), q0(1), q0(2), q0(3),
+            0, 0, 0,   // gyro bias
+            0, 0, 0,   // accel bias
+            0, 0, 0};  // mag bias
+
+        quatEkf.init(x0, 0.025);
+
+        ekfInitialized = true;
+    }
+
+    if(now - lastTimeEkf >= 25) {
+        quatEkf.onLoop(ctx);
+        
+        lastTimeEkf = now;
+    }
+
+    if (now - lastTime >= 100) {
         lastTime = now;
 
-        ctx.accel.debugPrint(Serial);
-        ctx.baro.debugPrint(Serial);
-        ctx.gps.debugPrint(Serial);
-        ctx.mag.debugPrint(Serial);
+        // Serial.print("Time: "); Serial.print(millis()); Serial.print(", ");
+        // ctx.accel.debugPrint(Serial);
+        // ctx.baro.debugPrint(Serial);
+        // ctx.gps.debugPrint(Serial);
+        // ctx.mag.debugPrint(Serial);
         // Serial.print("Flight mode: "); Serial.println(ctx.flightMode);
+
+        BLA::Matrix<13,1> xq = ctx.quatState;
+
+        BLA::Matrix<13,13> P = ctx.P;
+
+        Serial.println("<----- State ----->");
+        for (int i = 0; i < xq.Rows; i++) {
+            Serial.print(xq(i, 0), 4);  // 4 decimal places
+            Serial.print("\t");
+        }
+        Serial.println("");
+
+        Serial.println("<----- Error Covariance ----->");
+        for (int i = 0; i < P.Rows; i++) {
+            for (int j = 0; j < P.Cols; j++) {
+                Serial.print(P(i, j), 4);  // 4 decimal places
+                Serial.print("\t");
+            }
+            Serial.println("");
+        }
+
+        // Serial CSV
+        Serial.println("");
+        Serial.print(millis());
+        Serial.print(",");
+        ctx.baro.logCsvRow(Serial);
+        Serial.print(",");
+        ctx.accel.logCsvRow(Serial);
+        Serial.print(",");
+        ctx.mag.logCsvRow(Serial);
+        Serial.print(",");
+        ctx.gps.logCsvRow(Serial);
+        Serial.println();
 
         if (sd_initialized && ctx.logFile) {
             state = !state;
