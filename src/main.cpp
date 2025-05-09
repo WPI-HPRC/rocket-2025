@@ -176,29 +176,73 @@ void setup() {
     // quatEkf.init(xq_0, 0.01);
 }
 
-BLA::Matrix<4,1> quatFromTwoVectors(BLA::Matrix<3,1> a, BLA::Matrix<3,1> b) {
-    a = a / BLA::Norm(a);
-    b = b / BLA::Norm(b);
+// BLA::Matrix<4,1> quatFromTwoVectors(BLA::Matrix<3,1> a, BLA::Matrix<3,1> b) {
+//     a = a / BLA::Norm(a);
+//     b = b / BLA::Norm(b);
 
-    float dot_ab = (BLA::MatrixTranspose<BLA::Matrix<3,1>>(a) * b)(0);
+//     float dot_ab = (BLA::MatrixTranspose<BLA::Matrix<3,1>>(a) * b)(0);
 
-    BLA::Matrix<3,1> cross_ab = {
+//     BLA::Matrix<3,1> cross_ab = {
+//         a(1)*b(2) - a(2)*b(1),
+//         a(2)*b(0) - a(0)*b(2),
+//         a(0)*b(1) - a(1)*b(0)
+//     };
+
+//     float w = sqrt((1 + dot_ab) * 0.5f);
+//     float f = 1.0f / (2.0f * w);
+//     BLA::Matrix<4,1> q = {
+//         w,
+//         cross_ab(0) * f,
+//         cross_ab(1) * f,
+//         cross_ab(2) * f
+//     };
+
+//     return q / BLA::Norm(q);
+// }
+
+BLA::Matrix<3,1> cross(const BLA::Matrix<3,1>& a, const BLA::Matrix<3,1>& b) {
+    return {
         a(1)*b(2) - a(2)*b(1),
         a(2)*b(0) - a(0)*b(2),
         a(0)*b(1) - a(1)*b(0)
     };
+}
 
-    float w = sqrt((1 + dot_ab) * 0.5f);
-    float f = 1.0f / (2.0f * w);
-    BLA::Matrix<4,1> q = {
-        w,
-        cross_ab(0) * f,
-        cross_ab(1) * f,
-        cross_ab(2) * f
-    };
+BLA::Matrix<4,1> rot2quat(const BLA::Matrix<3,3>& R) {
+    float trace = R(0,0) + R(1,1) + R(2,2);
+    BLA::Matrix<4,1> q;
+
+    if (trace > 0.0f) {
+        float s = sqrt(trace + 1.0f) * 2.0f;
+        q(0) = 0.25f * s;
+        q(1) = (R(2,1) - R(1,2)) / s;
+        q(2) = (R(0,2) - R(2,0)) / s;
+        q(3) = (R(1,0) - R(0,1)) / s;
+    } else {
+        if (R(0,0) > R(1,1) && R(0,0) > R(2,2)) {
+            float s = sqrt(1.0f + R(0,0) - R(1,1) - R(2,2)) * 2.0f;
+            q(0) = (R(2,1) - R(1,2)) / s;
+            q(1) = 0.25f * s;
+            q(2) = (R(0,1) + R(1,0)) / s;
+            q(3) = (R(0,2) + R(2,0)) / s;
+        } else if (R(1,1) > R(2,2)) {
+            float s = sqrt(1.0f + R(1,1) - R(0,0) - R(2,2)) * 2.0f;
+            q(0) = (R(0,2) - R(2,0)) / s;
+            q(1) = (R(0,1) + R(1,0)) / s;
+            q(2) = 0.25f * s;
+            q(3) = (R(1,2) + R(2,1)) / s;
+        } else {
+            float s = sqrt(1.0f + R(2,2) - R(0,0) - R(1,1)) * 2.0f;
+            q(0) = (R(1,0) - R(0,1)) / s;
+            q(1) = (R(0,2) + R(2,0)) / s;
+            q(2) = (R(1,2) + R(2,1)) / s;
+            q(3) = 0.25f * s;
+        }
+    }
 
     return q / BLA::Norm(q);
 }
+
 
 void loop() {
 #if defined(MARS)
@@ -211,28 +255,74 @@ void loop() {
 
     long now = millis();
 
-    if(!ekfInitialized) {
+    // if(!ekfInitialized) {
+    //     BLA::Matrix<3,1> a_b = {
+    //         ctx.mag.getData().accelX,
+    //         ctx.mag.getData().accelY,
+    //         ctx.mag.getData().accelZ
+    //     };
+
+    //     a_b = a_b / BLA::Norm(a_b);
+
+    //     BLA::Matrix<3,1> z_ned = {0, 0, -9.80665};
+
+    //     BLA::Matrix<4,1> q0 = quatFromTwoVectors(a_b, z_ned);
+
+    //     BLA::Matrix<13,1> x0 = {q0(0), q0(1), q0(2), q0(3),
+    //         0, 0, 0,   // gyro bias
+    //         0, 0, 0,   // accel bias
+    //         0, 0, 0};  // mag bias
+
+    //     quatEkf.init(x0, 0.025);
+
+    //     ekfInitialized = true;
+    // }
+    if (!ekfInitialized) {
+        // === 1. Get Accelerometer Reading (Gravity Vector) ===
         BLA::Matrix<3,1> a_b = {
             ctx.mag.getData().accelX,
             ctx.mag.getData().accelY,
             ctx.mag.getData().accelZ
         };
-
-        a_b = a_b / BLA::Norm(a_b);
-
-        BLA::Matrix<3,1> z_ned = {0, 0, -9.80665};
-
-        BLA::Matrix<4,1> q0 = quatFromTwoVectors(a_b, z_ned);
-
-        BLA::Matrix<13,1> x0 = {q0(0), q0(1), q0(2), q0(3),
+        a_b = a_b / BLA::Norm(a_b);  // normalize gravity vector
+    
+        // === 2. Get Magnetometer Reading (Magnetic Field Vector) ===
+        BLA::Matrix<3,1> m_b = {
+            ctx.mag.getData().magX,
+            ctx.mag.getData().magY,
+            ctx.mag.getData().magZ
+        };
+        m_b = m_b / BLA::Norm(m_b);  // normalize magnetic field vector
+    
+        // === 3. Define Reference Vectors in NED Frame ===
+        BLA::Matrix<3,1> z_ned = {0, 0, -1};       // Down
+        BLA::Matrix<3,1> x_ned = {1, 0, 0};        // Magnetic North
+    
+        // === 4. Compute Body X and Y using Gram-Schmidt ===
+        BLA::Matrix<3,1> y_b = cross(a_b, m_b);
+        y_b = y_b / BLA::Norm(y_b);
+    
+        BLA::Matrix<3,1> x_b = cross(y_b, a_b);
+    
+        // Rotation matrix from NED to Body
+        BLA::Matrix<3,3> R_bn = {
+            x_b(0), y_b(0), a_b(0),
+            x_b(1), y_b(1), a_b(1),
+            x_b(2), y_b(2), a_b(2)
+        };
+    
+        BLA::Matrix<4,1> q0 = rot2quat(R_bn);  // You need this function
+    
+        BLA::Matrix<13,1> x0 = {
+            q0(0), q0(1), q0(2), q0(3),
             0, 0, 0,   // gyro bias
             0, 0, 0,   // accel bias
-            0, 0, 0};  // mag bias
-
+            0, 0, 0    // mag bias
+        };
+    
         quatEkf.init(x0, 0.025);
-
         ekfInitialized = true;
-    }
+    }    
 
     if(now - lastTimeEkf >= 25) {
         quatEkf.onLoop(ctx);
@@ -303,6 +393,8 @@ void loop() {
         lastFlush = now;
         ctx.logFile.flush();
     }
+
+    ctx.vehicleState = stateMachine.getCurrentStateId();
 
     delay(1);
 }

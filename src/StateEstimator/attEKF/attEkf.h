@@ -5,6 +5,7 @@
 #include <Context.h>
 
 #include "../kfConsts.h"
+#include "states/States.h"
 
 /**
  * @name AttKfInds
@@ -109,9 +110,13 @@ class AttStateEstimator {
         0, 0, asm330_const.accelZ_var + 0.01
     };
 
-    BLA::Matrix<3,3> R_mag = I_3 * icm20948_const.magXYZ_var;
+    // BLA::Matrix<3,3> R_mag = I_3 * icm20948_const.magXYZ_var;
+    float R_mag = icm20948_const.magXYZ_var;
 
     bool hasPassedGo = 0;
+
+    long lastTimeGrav = 0;
+    long lastTimeMag  = 0;
 };
 
 template <size_t N, size_t M>

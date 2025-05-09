@@ -64,6 +64,9 @@ void AttStateEstimator::init(BLA::Matrix<13,1> x_0, float dt) {
 
     this->x     = x_0;
     this->x_min = x_0;
+
+    lastTimeGrav = millis();
+    lastTimeMag  = millis();
 }
 
 BLA::Matrix<13,1> AttStateEstimator::onLoop(Context &ctx) {
@@ -104,12 +107,20 @@ BLA::Matrix<13,1> AttStateEstimator::onLoop(Context &ctx) {
     // Predict Error Covariance
     P_min = phi * F * BLA::MatrixTranspose<BLA::Matrix<13,13>>(phi) + Q;
 
-    // ===== IF ON PAD ===== TODO
-    applyGravUpdate(x_min, a_b);
+    x = x_min;
 
-    // ===== ALWAYS =====
-    // applyMagUpdate(x, m_b);
-    // APPLY MAG UPDATE
+    P = P_min;
+
+    if(millis() - lastTimeGrav >= 1000 && (ctx.flightMode == ID_PreLaunch)) {
+        applyGravUpdate(x, a_b);
+
+        lastTimeGrav = millis();
+
+    } else if(millis() - lastTimeMag >= 10000 && (ctx.flightMode == ID_PreLaunch)) {
+        // applyMagUpdate(x, m_b);
+
+        lastTimeMag = millis();
+    }
 
     // === Ensure P is Symmetric ===
     P = (P + BLA::MatrixTranspose<BLA::Matrix<13,13>>(P)) * 0.5f;
@@ -250,7 +261,7 @@ void AttStateEstimator::applyGravUpdate(BLA::Matrix<13,1> &x_in, BLA::Matrix<3,1
     BLA::Matrix<3, 13> H_grav = {
          2*qy, -2*qz,  2*qw, -2*qx, 0, 0, 0, 1, 0, 0, 0, 0, 0,
         -2*qx, -2*qw, -2*qz, -2*qy, 0, 0, 0, 0, 1, 0, 0, 0, 0,
-        -4*qw,  0,       0,      -4*qz, 0, 0, 0, 0, 0, 1, 0, 0, 0,
+        -4*qw,  0,     0,    -4*qz, 0, 0, 0, 0, 0, 1, 0, 0, 0,
     };
 
     BLA::Matrix<3,3> S = H_grav * P_min * BLA::MatrixTranspose<BLA::Matrix<3,13>>(H_grav) + R_grav;
@@ -259,6 +270,14 @@ void AttStateEstimator::applyGravUpdate(BLA::Matrix<13,1> &x_in, BLA::Matrix<3,1
 
     BLA::Matrix<3,1> y = z_grav - h_grav;
 
+    // Print innovation to teleplot three line series
+    Serial.print(">Grav Innovation X: ");
+    Serial.println(y(0));
+    Serial.print(">Grav Innovation Y: ");
+    Serial.println(y(1));
+    Serial.print(">Grav Innovation Z: ");
+    Serial.println(y(2));
+    
     x = x_in + K * (z_grav - h_grav);
 
     // Normalize quaternion
@@ -279,12 +298,11 @@ void AttStateEstimator::applyGravUpdate(BLA::Matrix<13,1> &x_in, BLA::Matrix<3,1
 }
 
 void AttStateEstimator::applyMagUpdate(BLA::Matrix<13,1> &x_in, BLA::Matrix<3,1> m_b) {
-    BLA::Matrix<3,1> B_NED = {19.9583f, -4.8770f, 47.0710f}; // [uT]
+    // Reference horizontal magnetic field in NED [µT]
+    float B_N = 19.9583f;
+    float B_E = -4.8770f;
 
-    float B_N = B_NED(0);
-    float B_E = B_NED(1);
-    float B_D = B_NED(2);
-
+    // Extract quaternion
     BLA::Matrix<4,1> q = {
         x_in(AttKFInds::q_w),
         x_in(AttKFInds::q_x),
@@ -292,56 +310,55 @@ void AttStateEstimator::applyMagUpdate(BLA::Matrix<13,1> &x_in, BLA::Matrix<3,1>
         x_in(AttKFInds::q_z)
     };
 
-    BLA::Matrix<3,3> R_TB = quat2rot(q);
-
+    // Extract magnetometer bias
     BLA::Matrix<3,1> bias = {
         x_in(AttKFInds::mb_x),
         x_in(AttKFInds::mb_y),
         x_in(AttKFInds::mb_z)
     };
 
-    float qw = x_in(AttKFInds::q_w);
-    float qx = x_in(AttKFInds::q_x);
-    float qy = x_in(AttKFInds::q_y);
-    float qz = x_in(AttKFInds::q_z);
+    // Rotate reference horizontal magnetic field to body frame
+    BLA::Matrix<3,3> R_TB = quat2rot(q);
+    BLA::Matrix<3,1> B_ref_NED = {B_N, B_E, 0.0f};
+    BLA::Matrix<3,1> h_b = BLA::MatrixTranspose<BLA::Matrix<3,3>>(R_TB) * B_ref_NED + bias;
 
-    float mbx = x_in(AttKFInds::mb_x);
-    float mby = x_in(AttKFInds::mb_y);
-    float mbz = x_in(AttKFInds::mb_z);
+    // Bias-corrected measured magnetic field
+    m_b = m_b - bias;
 
-    BLA::Matrix<3,1> h_mag = BLA::MatrixTranspose<BLA::Matrix<3,3>>(R_TB) * B_NED + bias;
-    BLA::Matrix<3,1> z_mag = m_b - bias;
+    // Compute yaw from projected fields
+    float yaw_pred = atan2f(h_b(1), h_b(0));
+    float yaw_meas = atan2f(m_b(1), m_b(0));
+    float yaw_err = yaw_meas - yaw_pred;
 
-    BLA::Matrix<3,13> H_mag = {
-        2*B_E*qz - 2*B_D*qy,                       
-        2*B_D*qz + 2*B_E*qy,                         
-        2*B_E*qx - 2*B_D*qw - 4*B_N*qy,              
-        2*B_D*qx + 2*B_E*qw - 4*B_N*qz,           
-        0, 0, 0, 0, 0, 0,
-        1, 0, 0,                                      
-    
-        2*B_D*qx - 2*B_N*qz,                      
-        2*B_D*qw - 4*B_E*qx + 2*B_N*qy,             
-        2*B_D*qz + 2*B_N*qx,                          
-        2*B_D*qy - 4*B_E*qz - 2*B_N*qw,               
-        0, 0, 0, 0, 0, 0,
-        0, 1, 0,                                     
-    
-        2*B_N*qy - 2*B_E*qx,                         
-        2*B_N*qz - 2*B_E*qw - 4*B_D*qx,               
-        2*B_E*qz - 4*B_D*qy + 2*B_N*qw,              
-        2*B_E*qy + 2*B_N*qx,                        
-        0, 0, 0, 0, 0, 0,
-        0, 0, 1                                     
-    };
+    // Wrap angle to [-pi, pi]
+    while (yaw_err > M_PI) yaw_err -= 2.0f * M_PI;
+    while (yaw_err < -M_PI) yaw_err += 2.0f * M_PI;
 
-    BLA::Matrix<3,3> S = H_mag * P_min * BLA::MatrixTranspose<BLA::Matrix<3,13>>(H_mag) + R_mag;
+    // Define observation model H for heading: only q_z and gyroBias_z affect yaw
+    BLA::Matrix<1,13> H_yaw = {0, 0, 0, 2.0f,   // quaternion: only qz
+                               0, 0, 1.0f,      // gyroBias_z
+                               0, 0, 0,         // accelBias
+                               0, 0, 0};        // magBias (already removed from measurement)
 
-    BLA::Matrix<13,3> K = P_min * BLA::MatrixTranspose<BLA::Matrix<3,13>>(H_mag) * BLA::Inverse(S);
+    // Compute Kalman gain
+    auto H_yaw_T = BLA::MatrixTranspose<BLA::Matrix<1,13>>(H_yaw);
+    BLA::Matrix<1,1> S_mat = H_yaw * P_min * H_yaw_T;
+    float S = S_mat(0,0) + R_mag;  // R_mag is yaw measurement variance [rad^2]
+    BLA::Matrix<13,1> K = (P_min * H_yaw_T) * (1.0f / S);
 
-    x = x_in + K * (z_mag - h_mag);
+    // Print innovation to teleplot
+    Serial.print(">Yaw Innovation: ");
+    Serial.println(yaw_err);
 
-    //Normalize quaternion
+    Serial.print(">Yaw: ");
+    Serial.println(yaw_meas);
+    Serial.print(">Yaw Pred: ");
+    Serial.println(yaw_pred);
+
+    // Update state
+    x = x_in + K * yaw_err;
+
+    // Normalize quaternion
     BLA::Matrix<4,1> quat = {
         x(AttKFInds::q_w),
         x(AttKFInds::q_x),
@@ -354,8 +371,10 @@ void AttStateEstimator::applyMagUpdate(BLA::Matrix<13,1> &x_in, BLA::Matrix<3,1>
     x(AttKFInds::q_y) = quat(2);
     x(AttKFInds::q_z) = quat(3);
 
-    P = (I_13 - K * H_mag) * P_min;
+    // Update covariance
+    P = (I_13 - K * H_yaw) * P_min;
 }
+
 
 BLA::Matrix<3,3> quat2rot(const BLA::Matrix<4,1> &q) {
 

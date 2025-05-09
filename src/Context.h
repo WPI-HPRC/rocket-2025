@@ -28,6 +28,8 @@ struct Context {
     BLA::Matrix<13,1> quatState;
     BLA::Matrix<13,13> P;
 
+    int vehicleState = 0;
+
     void logCsvHeader() {
         logFile.print("timestamp,");
         baro.logCsvHeader(logFile);
