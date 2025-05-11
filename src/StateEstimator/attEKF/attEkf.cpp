@@ -33,10 +33,10 @@ AttStateEstimator::AttStateEstimator() {
         Q(idx, idx) = 1e-8;
     }
     for(uint8_t idx : AttKFInds::gyroBias) {
-        Q(idx, idx) = powf(0.01f,2);
+        Q(idx, idx) = powf(0.1f,2);
     }
     for(uint8_t idx : AttKFInds::accelBias) {
-        Q(idx, idx) = powf(0.01f,2);
+        Q(idx, idx) = powf(0.00f,2);
     }
     for(uint8_t idx : AttKFInds::magBias) {
         Q(idx, idx) = powf(0.1f, 2);
@@ -95,8 +95,8 @@ BLA::Matrix<13,1> AttStateEstimator::onLoop(Context &ctx) {
         hasPassedGo = true;
     }
 
-    x_min = x + predictionFunction(x, u) * dt;
-    // x_min = propRK4(u);
+    // x_min = x + predictionFunction(x, u) * dt;
+    x_min = propRK4(u);
 
     // Measurement Jacobian Matrix
     BLA::Matrix<13,13> F = predictionJacobian(u);
@@ -259,9 +259,9 @@ void AttStateEstimator::applyGravUpdate(BLA::Matrix<13,1> &x_in, BLA::Matrix<3,1
     float abz = x_in(AttKFInds::ab_z);
 
     BLA::Matrix<3, 13> H_grav = {
-         2*qy, -2*qz,  2*qw, -2*qx, 0, 0, 0, 1, 0, 0, 0, 0, 0,
-        -2*qx, -2*qw, -2*qz, -2*qy, 0, 0, 0, 0, 1, 0, 0, 0, 0,
-        -4*qw,  0,     0,    -4*qz, 0, 0, 0, 0, 0, 1, 0, 0, 0,
+         2*qy, -2*qz,  2*qw, -2*qx, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        -2*qx, -2*qw, -2*qz, -2*qy, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        -4*qw,  0,     0,    -4*qz, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     };
 
     BLA::Matrix<3,3> S = H_grav * P_min * BLA::MatrixTranspose<BLA::Matrix<3,13>>(H_grav) + R_grav;

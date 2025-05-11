@@ -24,6 +24,17 @@ struct Context {
     float q_x;
     float q_y;
     float q_z;
+    
+    float q_cov_w;
+    float q_cov_x;
+    float q_cov_y;
+    float q_cov_z;
+
+    /*
+    telem_packet->covQW = ctx->quatState(0);
+        telem_packet->covQX = ctx->quatState(1);
+        telem_packet->covQY = ctx->quatState(2);
+        telem_packet->covQZ = ctx->quatState(3);*/
 
     BLA::Matrix<13,1> quatState;
     BLA::Matrix<13,13> P;
