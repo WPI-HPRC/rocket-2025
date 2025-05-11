@@ -292,6 +292,11 @@ void loop() {
             ctx.mag.getData().magY,
             ctx.mag.getData().magZ
         };
+
+        // Apply hard Iron correction
+
+        m_b  = m_b - BLA::Matrix<3,1>{10.1378, 13.0721, -23.2922};
+
         m_b = m_b / BLA::Norm(m_b);  // normalize magnetic field vector
     
         // === 3. Define Reference Vectors in NED Frame ===
@@ -322,7 +327,7 @@ void loop() {
     
         quatEkf.init(x0, 0.025);
         ekfInitialized = true;
-    }    
+    }
 
     if(now - lastTimeEkf >= 25) {
         quatEkf.onLoop(ctx);
