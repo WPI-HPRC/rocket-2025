@@ -56,6 +56,7 @@ void XbeeProSX::loop() {
     // Reading File
     // if first char is not null term. then we have a file to send
     if (fileToSend[0] != 0) { 
+        Serial.printf("Reading SD File: %s", fileToSend);
         // open file (inspired from implimentation of reading all files in sd)
         #if defined(MARS)
         FsFile file = ctx->sd.open(fileToSend, O_READ);
@@ -179,7 +180,6 @@ void XbeeProSX::handleReceivePacket(XBee::ReceivePacket::Struct *frame) {
                     // we might not have to worry about writing the null term. but this might be safer
                 };
 
-            Serial.printf("Reading SD File: %s", fileToSend);
             // now that fileToSend is set, we will send file in the next iteration of `loop()`
             break;
         case HPRC_Command_clearSD_tag: {
