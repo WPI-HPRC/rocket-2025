@@ -176,7 +176,7 @@ void XbeeProSX::handleReceivePacket(XBee::ReceivePacket::Struct *frame) {
 
                     arg[len] = '\0'; // write null term.
 
-                    // NOTE: since fileToSend is initialized to all 0s (so filled with null terminators),
+                    // Since fileToSend is initialized to all 0s (so filled with null terminators),
                     // we might not have to worry about writing the null term. but this might be safer
                 };
 
