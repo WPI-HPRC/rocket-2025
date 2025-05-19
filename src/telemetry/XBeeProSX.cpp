@@ -47,6 +47,43 @@ void XbeeProSX::loop() {
         sendTransmitRequestCommand(gs_addr, tx_buf, ostream.bytes_written);
         spi_dev->endTransaction();
     }
+
+    // Reading File
+    // if first char is not null term. then we have a file to send
+    if (fileToSend[0] != 0) { 
+        // open file (inspired from implimentation of reading all files in sd)
+        #if defined(MARS)
+        FsFile file = ctx->sd.open(fileToSend, O_READ);
+        #elif defined(POLARIS)
+        FsFile file = SD.sdfs.open(fileToSend, O_READ);
+        #endif
+
+        // check that file was opened and set the place to read from to were we got to in the last iteration
+        if (file || file.seekSet(numBytesSent)) {
+            byte data[maxBytesToSend] = {0}; // don't know if this needs to be null terminated or not
+            size_t bytesRead = 0; // bytes read in this iteration, not same as `numBytesSent`
+
+            // don't know if this is different for MARS and POLARIS
+            bytesRead = file.read(data, maxBytesToSend);
+
+            // this means no more file left to read in next iteration
+            if (bytesRead < maxBytesToSend) {
+                fileToSend[256] = {0};
+                numBytesSent = 0;
+            }
+
+            file.close();
+
+            // SOMEHOW ENCODE AND SEND DATA
+
+            numBytesSent += bytesRead;
+        }
+        else { // give up
+            fileToSend[256] = {0};
+            numBytesSent = 0;
+        }
+    }
+
     // For now, we won't even attempt to receive when in flight mode (although
     // we will still read bytes when writing)
     if (!ctx->flightMode) {
@@ -89,11 +126,11 @@ void XbeeProSX::handleReceivePacket(XBee::ReceivePacket::Struct *frame) {
             Serial.println("Reading SD Directory");
             tx_command_response.which_Message =
                 HPRC_CommandResponse_readSDDirectory_tag;
-#if defined(MARS)
+            #if defined(MARS)
             sd_root = ctx->sd.open("/");
-#elif defined(POLARIS)
+            #elif defined(POLARIS)
             sd_root = SD.sdfs.open("/");
-#endif
+            #endif
             tx_command_response.Message.readSDDirectory.filename.arg = &sd_root;
             tx_command_response.Message.readSDDirectory.filename.funcs.encode =
                 [](pb_ostream_t *s, const pb_field_t *f, void *const *arg) -> bool {
@@ -119,7 +156,26 @@ void XbeeProSX::handleReceivePacket(XBee::ReceivePacket::Struct *frame) {
             };
             response_to_send = true;
         } break;
+        
         case HPRC_Command_readSDFile_tag:
+            rx_command->Message.readSDFile.filename.arg = fileToSend; // pass the file-name buffer as argument
+            rx_command->Message.readSDFile.filename.funcs.decode = 
+                [](pb_istream_t *stream, const pb_field_t *field, void **arg) -> bool {
+                    size_t len = stream->bytes_left;
+                    if (len >= sizeof(arg)) {len = sizeof(arg) - 1;} // make sure we dont read more than 256 - 1 = 255 bytes
+
+                    if (!pb_read(stream, (pb_byte_t*)arg, len-1)) { // read 1 less byte then in buffer (`arg`) leaving 1 for null term.
+                        return false;
+                    }
+
+                    arg[len] = '\0'; // write null term.
+
+                    // NOTE: since fileToSend is initialized to all 0s (so filled with null terminators),
+                    // we might not have to worry about writing the null term. but this might be safer
+                };
+
+            Serial.printf("Reading SD File: %s", fileToSend);
+            // now that fileToSend is set, we will send file in the next iteration of `loop()`
             break;
         case HPRC_Command_clearSD_tag: {
             ctx->logFile.close();

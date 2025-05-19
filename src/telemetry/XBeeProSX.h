@@ -61,6 +61,10 @@ class XbeeProSX : public XBeeDevice {
     bool command_response_to_send = false;
 
     FsFile sd_root;
+    char fileNameBuf[256][256];
+    char fileToSend[256] = {0};
+    size_t numBytesSent = 0;
+    size_t maxBytesToSend = 200;
 
     uint64_t subscribers[64];
     size_t num_subscribers;
