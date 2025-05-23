@@ -4,6 +4,7 @@
 #include "HardwareTimer.h"
 #include "Wire.h"
 #include "airbrakes/AirbrakeController.h"
+#include "boilerplate/Looper/Looper.h"
 #include "boilerplate/Sensors/Sensor/Sensor.h"
 #include "pb.h"
 #include "states/States.h"
@@ -38,16 +39,11 @@ Context ctx = {
 };
 
 XbeeProSX xbee =
-    XbeeProSX(&ctx, XBEE_CS, XBEE_ATTN, GROUNDSTATION_XBEE_ADDRESS, &xbee_spi);
+    XbeeProSX(&ctx, XBEE_CS, XBEE_ATTN, GROUNDSTATION_XBEE_ADDRESS, &xbee_spi, 0);
 
-#if defined(MARS)
 Sensor *sensors[] = {&ctx.accel, &ctx.baro, &ctx.gps, &ctx.mag};
-#elif defined(POLARIS)
-Sensor *sensors[] = {&ctx.accel, &ctx.baro, &ctx.mag, &ctx.gps};
-#endif
 
-SensorManager<decltype(&millis), sizeof(sensors) / sizeof(Sensor *)>
-    sensorManager(sensors, millis);
+SensorManager sensorManager(sensors, millis);
 
 StateMachine stateMachine((State *)new PreLaunch(&ctx));
 
@@ -76,63 +72,15 @@ void output_byte(uint8_t data, uint pin) {
     delay(1000);
 }
 
-void loop10ms(); // Main update
-void loop25ms(); // EKF
-void loop250ms(); // Logging (not called when flightMode is set)
+void loop10ms();   // Main update
+void loop50ms();   // xbee send
+void loop25ms();   // EKF
+void loop250ms();  // Logging (not called when flightMode is set)
 void loop1000ms(); // SD Flush
 
-void timeHandler() {
-    static uint64_t lastCall10ms = 0;
-    static uint64_t lastCall1000ms = 0;
-
-    bool run10ms = false;
-    bool run1000ms = false;
-
-    uint64_t now = micros();
-    if (now - lastCall10ms >= 10000) {
-        lastCall10ms = now;
-        run10ms = true;
-    }
-    if (now - lastCall1000ms >= 1000000) {
-        lastCall1000ms = now;
-        run1000ms = true;
-    }
-
-    if (run10ms) {
-        loop10ms();
-    }
-    if (run1000ms) {
-        loop1000ms();
-    }
-}
-
-void lowPrioTimeHandler() {
-    static uint64_t lastCall25ms = 0;
-    static uint64_t lastCall250ms = 0;
-
-    bool run25ms = false;
-    bool run250ms = false;
-
-    uint64_t now = micros();
-    if (now - lastCall25ms >= 25000) {
-        lastCall25ms = now;
-        run25ms = true;
-    }
-    if (!ctx.flightMode && now - lastCall250ms >= 250000) {
-        lastCall250ms = now;
-        run250ms = true;
-    }
-
-    if (run25ms) {
-        loop25ms();
-    }
-    if (run250ms) {
-        loop250ms();
-    }
-}
-
-HardwareTimer loopTimer(TIM2);
-HardwareTimer lowPrioTimer(TIM3);
+Looper<loop10ms, loop50ms, loop250ms, loop1000ms>
+    looper(10, 10, TIM2, 10 * 1000, 50 * 1000, 250 * 1000, 1000 * 1000);
+Looper<loop25ms> lowPrioLooper(500, 11, TIM3, 25 * 1000);
 
 void setup() {
 #if defined(MARS)
@@ -209,16 +157,8 @@ void setup() {
 
     xbee.start();
 
-    loopTimer.setOverflow(10, MICROSEC_FORMAT);
-    loopTimer.attachInterrupt(timeHandler);
-    loopTimer.setInterruptPriority(10, 0);
-
-    lowPrioTimer.setOverflow(500, MICROSEC_FORMAT);
-    lowPrioTimer.attachInterrupt(lowPrioTimeHandler);
-    lowPrioTimer.setInterruptPriority(11, 0);
-
-    loopTimer.resume();
-    lowPrioTimer.resume();
+    looper.init();
+    lowPrioLooper.init();
 }
 
 void loop10ms() {
@@ -229,7 +169,6 @@ void loop10ms() {
 
     stateMachine.loop();
     sensorManager.loop();
-    xbee.loop();
 
     if (sd_initialized && ctx.logFile) {
         ctx.logFile.print(millis());
@@ -245,8 +184,9 @@ void loop10ms() {
     }
 }
 
-void loop25ms() {
-}
+void loop50ms() { xbee.loop(); }
+
+void loop25ms() {}
 
 void loop250ms() {
     ctx.accel.debugPrint(Serial);
@@ -257,11 +197,9 @@ void loop250ms() {
     if (sd_initialized && ctx.logFile) {
         state = !state;
     }
-    digitalWrite(LED_PIN, state);    
+    digitalWrite(LED_PIN, state);
 }
 
-void loop1000ms() {
-    ctx.logFile.flush();
-}
+void loop1000ms() { ctx.logFile.flush(); }
 
 void loop() {}

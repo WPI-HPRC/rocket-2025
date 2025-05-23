@@ -1,5 +1,4 @@
 #include "XBeeProSX.h"
-#include "CStringBuilder.h"
 #include "Command.pb.h"
 #include "CommandResponse.pb.h"
 #include "Packet.pb.h"
@@ -35,13 +34,13 @@ void XbeeProSX::loop() {
         last_sent = now;
         // Write packet
         telem_packet->timestamp = now;
-        telem_packet->altitude = ctx->baro.getData().altitude;
+        telem_packet->altitude = ctx->baro.getData()->altitude;
         telem_packet->servoPosition = ctx->airbrakes.read();
-        telem_packet->gpsLat = ctx->gps.getData().lat;
-        telem_packet->gpsLong = ctx->gps.getData().lon;
-        telem_packet->satellites = ctx->gps.getData().satellites;
-        telem_packet->gpsLock = ctx->gps.getData().gpsLockType == 3;
-        telem_packet->gpsAltMSL = ctx->gps.getData().altMSL;
+        telem_packet->gpsLat = ctx->gps.getData()->lat;
+        telem_packet->gpsLong = ctx->gps.getData()->lon;
+        telem_packet->satellites = ctx->gps.getData()->satellites;
+        telem_packet->gpsLock = ctx->gps.getData()->gpsLockType == 3;
+        telem_packet->gpsAltMSL = ctx->gps.getData()->altMSL;
 
         // Send packet
         final_packet.which_Message = HPRC_Packet_telemetry_tag;

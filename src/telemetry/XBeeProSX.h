@@ -3,7 +3,6 @@
 #include <Arduino.h>
 #include <SPI.h>
 
-#include "CStringBuilder.h"
 #include "Context.h"
 #include "Packet.pb.h"
 #include "RocketTelemetryPacket.pb.h"

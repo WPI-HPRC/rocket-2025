@@ -3,6 +3,8 @@
 #include "../Context.h"
 #include "../boilerplate/StateMachine/State.h"
 #include "../boilerplate/StateMachine/StateMachine.h"
+#include "../boilerplate/Utilities/Debouncer.h"
+#include "FlightParams.h"
 #include <Arduino.h>
 
 enum StateId {
@@ -28,6 +30,9 @@ using StateMachine = TStateMachine<Context, StateId, decltype(&millis)>;
 
 class PreLaunch : public State {
     STATE_INNER(PreLaunch)
+
+    Debouncer launchAccelDebouncer = Debouncer(500);
+    long lastAccelReadingTime = 0;
 };
 
 class Boost : public State {
