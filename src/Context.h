@@ -1,5 +1,6 @@
 #pragma once
 
+#include "BasicLinearAlgebra.h"
 #include "airbrakes/AirbrakeController.h"
 #include "config.h"
 
@@ -18,6 +19,7 @@ struct Context {
     AirbrakeController airbrakes;
     File logFile;
     bool flightMode;
+    BLA::Matrix<13, 1> quatState;
 
     void logCsvHeader() {
         logFile.print("timestamp,");

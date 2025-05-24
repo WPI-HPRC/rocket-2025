@@ -1,12 +1,11 @@
 #include <Arduino.h>
 
 #include "Context.h"
-#include "HardwareTimer.h"
 #include "Wire.h"
 #include "airbrakes/AirbrakeController.h"
 #include "boilerplate/Looper/Looper.h"
 #include "boilerplate/Sensors/Sensor/Sensor.h"
-#include "pb.h"
+#include "boilerplate/StateEstimator/AttEkf.h"
 #include "states/States.h"
 #include <SPI.h>
 #include <boilerplate/Sensors/SensorManager/SensorManager.h>
@@ -38,14 +37,16 @@ Context ctx = {
     .flightMode = false,
 };
 
-XbeeProSX xbee =
-    XbeeProSX(&ctx, XBEE_CS, XBEE_ATTN, GROUNDSTATION_XBEE_ADDRESS, &xbee_spi, 0);
+XbeeProSX xbee = XbeeProSX(&ctx, XBEE_CS, XBEE_ATTN, GROUNDSTATION_XBEE_ADDRESS,
+                           &xbee_spi, 0);
 
 Sensor *sensors[] = {&ctx.accel, &ctx.baro, &ctx.gps, &ctx.mag};
 
 SensorManager sensorManager(sensors, millis);
 
 StateMachine stateMachine((State *)new PreLaunch(&ctx));
+
+AttStateEstimator quatEkf(ctx.mag.getData(), 0.025);
 
 bool sd_initialized = false;
 bool state = true;
@@ -72,15 +73,17 @@ void output_byte(uint8_t data, uint pin) {
     delay(1000);
 }
 
-void loop10ms();   // Main update
-void loop50ms();   // xbee send
-void loop25ms();   // EKF
-void loop250ms();  // Logging (not called when flightMode is set)
-void loop1000ms(); // SD Flush
+void mainLoop();       // Main update
+void xbeeLoop();       // xbee send
+void EKFLoop();        // EKF
+void loggingLoop();    // Logging (not called when flightMode is set)
+void occasionalLoop(); // For things like flushing SD card
 
-Looper<loop10ms, loop50ms, loop250ms, loop1000ms>
-    looper(10, 10, TIM2, 10 * 1000, 50 * 1000, 250 * 1000, 1000 * 1000);
-Looper<loop25ms> lowPrioLooper(500, 11, TIM3, 25 * 1000);
+Looper<FunctionsList<mainLoop, xbeeLoop, loggingLoop, occasionalLoop>,
+       FunctionDelaysList<10u, 50u, 250u, 1000u>>
+    looper(100, 10, TIM2);
+Looper<FunctionsList<EKFLoop>, FunctionDelaysList<25u>> lowPrioLooper(1000, 11,
+                                                                      TIM3);
 
 void setup() {
 #if defined(MARS)
@@ -95,7 +98,11 @@ void setup() {
 #endif
     Serial.begin(9600);
 
+    // idk if both of the `write`s are necessary, but it seems to help with it
+    // not reseting to neutral for very long
+    ctx.airbrakes.write(SERVO_MIN);
     ctx.airbrakes.init();
+    ctx.airbrakes.write(SERVO_MIN);
 
     Wire.setSCL(SENSOR_SCL);
     Wire.setSDA(SENSOR_SDA);
@@ -161,7 +168,12 @@ void setup() {
     lowPrioLooper.init();
 }
 
-void loop10ms() {
+void mainLoop() {
+    static uint32_t lastBaroDataLogged = 0;
+    static uint32_t lastAccelDataLogged = 0;
+    static uint32_t lastMagDataLogged = 0;
+    static uint32_t lastGpsDataLogged = 0;
+
 #if defined(MARS)
     digitalWrite(PE0, digitalRead(PA3));
     digitalWrite(PE1, digitalRead(PC4));
@@ -173,22 +185,50 @@ void loop10ms() {
     if (sd_initialized && ctx.logFile) {
         ctx.logFile.print(millis());
         ctx.logFile.print(",");
-        ctx.baro.logCsvRow(ctx.logFile);
+        if (lastBaroDataLogged < ctx.baro.getLastTimePolled()) {
+            lastBaroDataLogged = ctx.baro.getLastTimePolled();
+            ctx.baro.logCsvRow(ctx.logFile);
+        }
         ctx.logFile.print(",");
-        ctx.accel.logCsvRow(ctx.logFile);
+        if (lastAccelDataLogged < ctx.accel.getLastTimePolled()) {
+            lastAccelDataLogged = ctx.accel.getLastTimePolled();
+            ctx.accel.logCsvRow(ctx.logFile);
+        }
         ctx.logFile.print(",");
-        ctx.mag.logCsvRow(ctx.logFile);
+        if (lastMagDataLogged < ctx.mag.getLastTimePolled()) {
+            lastMagDataLogged = ctx.mag.getLastTimePolled();
+            ctx.mag.logCsvRow(ctx.logFile);
+        }
         ctx.logFile.print(",");
-        ctx.gps.logCsvRow(ctx.logFile);
+        if (lastGpsDataLogged < ctx.gps.getLastTimePolled()) {
+            lastGpsDataLogged = ctx.gps.getLastTimePolled();
+            ctx.gps.logCsvRow(ctx.logFile);
+        }
         ctx.logFile.println();
     }
 }
 
-void loop50ms() { xbee.loop(); }
+void xbeeLoop() { xbee.loop(); }
 
-void loop25ms() {}
+void EKFLoop() {
+    static bool attEkfInitialized = false;
 
-void loop250ms() {
+    if (!attEkfInitialized) {
+        quatEkf.init();
+        attEkfInitialized = true;
+    }
+
+    auto x = quatEkf.onLoop(stateMachine.getCurrentStateId() == ID_PreLaunch);
+
+    // disabling interrupts here may not be necessary, but it guarantees we
+    // don't read context from the high priority interrupt in an invalid state,
+    // since that one can preempt this one.
+    noInterrupts();
+    ctx.quatState = x;
+    interrupts();
+}
+
+void loggingLoop() {
     ctx.accel.debugPrint(Serial);
     ctx.baro.debugPrint(Serial);
     ctx.gps.debugPrint(Serial);
@@ -200,6 +240,6 @@ void loop250ms() {
     digitalWrite(LED_PIN, state);
 }
 
-void loop1000ms() { ctx.logFile.flush(); }
+void occasionalLoop() { ctx.logFile.flush(); }
 
 void loop() {}

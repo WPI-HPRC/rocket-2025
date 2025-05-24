@@ -3,6 +3,7 @@
 #include "CommandResponse.pb.h"
 #include "Packet.pb.h"
 #include "Telemetry.pb.h"
+#include "boilerplate/StateEstimator/AttEkf.h"
 #include "pb_decode.h"
 #include "pb_encode.h"
 #include <cstdarg>
@@ -34,13 +35,35 @@ void XbeeProSX::loop() {
         last_sent = now;
         // Write packet
         telem_packet->timestamp = now;
+
+        telem_packet->pressure = ctx->baro.getData()->pressure;
+        telem_packet->temperature = ctx->baro.getData()->temperature;
         telem_packet->altitude = ctx->baro.getData()->altitude;
+
+        telem_packet->accelX = ctx->mag.getData()->accelX;
+        telem_packet->accelZ = ctx->mag.getData()->accelY;
+        telem_packet->accelY = ctx->mag.getData()->accelZ;
+
+        telem_packet->gyroX = ctx->mag.getData()->gyrX;
+        telem_packet->gyroY = ctx->mag.getData()->gyrY;
+        telem_packet->gyroZ = ctx->mag.getData()->gyrZ;
+
+        telem_packet->magX = ctx->mag.getData()->magX;
+        telem_packet->magY = ctx->mag.getData()->magY;
+        telem_packet->magZ = ctx->mag.getData()->magZ;
+
         telem_packet->servoPosition = ctx->airbrakes.read();
+
         telem_packet->gpsLat = ctx->gps.getData()->lat;
         telem_packet->gpsLong = ctx->gps.getData()->lon;
         telem_packet->satellites = ctx->gps.getData()->satellites;
         telem_packet->gpsLock = ctx->gps.getData()->gpsLockType == 3;
         telem_packet->gpsAltMSL = ctx->gps.getData()->altMSL;
+
+        telem_packet->w = ctx->quatState(AttKFInds::q_w);
+        telem_packet->i = ctx->quatState(AttKFInds::q_x);
+        telem_packet->j = ctx->quatState(AttKFInds::q_y);
+        telem_packet->k = ctx->quatState(AttKFInds::q_z);
 
         // Send packet
         final_packet.which_Message = HPRC_Packet_telemetry_tag;
