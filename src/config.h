@@ -28,6 +28,13 @@
     #define AIRBRAKE_SERVO_PIN PF1
     #define AIRBRAKE_FEEDBACK_PIN PF3
 
+    #define CAM_CS PB12
+    #define CAM_SCK PB13
+    #define CAM_MISO PB14
+    #define CAM_MOSI PB15
+
+    #define RELAY_PIN PE5
+
     #define SERVO_MIN 1395
     #define SERVO_MAX 1660
 

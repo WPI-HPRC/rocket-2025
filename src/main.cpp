@@ -19,6 +19,7 @@
 
 #if defined(MARS)
 SPIClass xbee_spi(XBEE_MOSI, XBEE_MISO, XBEE_SCLK);
+SPIClass cam_spi(CAM_MOSI, CAM_MISO, CAM_SCK);
 #elif defined(POLARIS)
 SPIClass xbee_spi = SPI;
 #endif
@@ -166,12 +167,29 @@ void setup() {
 #endif
 
     xbee.start();
+    cam_spi.beginTransaction(SPISettings(328125, MSBFIRST, SPI_MODE0));
+
+    pinMode(CAM_CS, OUTPUT);
+    digitalWrite(CAM_CS, HIGH);
+
 
     looper.init();
     lowPrioLooper.init();
 }
 
 void mainLoop() {
+
+    /*
+    Serial.printf("BYTE: ");
+
+    digitalWrite(CAM_CS, LOW);
+    uint8_t *buff = new uint8_t;
+    *buff = 77;
+    cam_spi.transfer(buff, 1);
+    Serial.printf("%d\n", *buff);
+    digitalWrite(CAM_CS, HIGH);
+*/
+
     static uint32_t lastBaroDataLogged = 0;
     static uint32_t lastAccelDataLogged = 0;
     static uint32_t lastMagDataLogged = 0;
@@ -243,11 +261,12 @@ void EKFLoop() {
 }
 
 void loggingLoop() {
+    /*
     ctx.accel.debugPrint(Serial);
     ctx.baro.debugPrint(Serial);
     ctx.gps.debugPrint(Serial);
     ctx.mag.debugPrint(Serial);
-
+    */
     if (sd_initialized && ctx.logFile) {
         state = !state;
     }
