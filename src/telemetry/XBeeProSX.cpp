@@ -212,7 +212,10 @@ void XbeeProSX::handleReceivePacket(XBee::ReceivePacket::Struct *frame) {
             digitalWrite(RELAY_PIN,
                          rx_command->Message.setVideoActive.videoActive ? HIGH
                                                                         : LOW);
+        case HPRC_Command_setAcksEnabled_tag:
+                setAcks(rx_command->Message.setAcksEnabled.acksEnabled);
             break;
+        
         default:
             break;
         }
