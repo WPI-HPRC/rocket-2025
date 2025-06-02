@@ -26,6 +26,9 @@ void XbeeProSX::start() {
     pinMode(_attn_pin, INPUT);
     digitalWrite(_cs_pin, HIGH);
 
+    pinMode(RELAY_PIN, OUTPUT);
+    digitalWrite(RELAY_PIN, LOW);
+
     last_sent = millis();
 }
 
@@ -66,13 +69,15 @@ void XbeeProSX::loop() {
         telem_packet->k = ctx->quatState(AttKFInds::q_z);
 
         // Send packet
+        
         final_packet.which_Message = HPRC_Packet_telemetry_tag;
         final_packet.Message.telemetry = final_telem_packet;
         ostream = pb_ostream_from_buffer(tx_buf, sizeof(tx_buf));
         pb_encode(&ostream, &HPRC_Packet_msg, &final_packet);
         spi_dev->beginTransaction(SPISettings(1000000, MSBFIRST, SPI_MODE0));
-        sendTransmitRequestCommand(gs_addr, tx_buf, ostream.bytes_written);
+        sendTransmitRequestCommand(gs_addr, enable_acks, 0x83, 0x00, tx_buf, ostream.bytes_written);
         spi_dev->endTransaction();
+        
     }
     // For now, we won't even attempt to receive when in flight mode (although
     // we will still read bytes when writing)
@@ -176,6 +181,10 @@ void XbeeProSX::handleReceivePacket(XBee::ReceivePacket::Struct *frame) {
                 HPRC_CommandResponse_setVideoActive_tag;
             tx_command_response.Message.setVideoActive.success = false;
             response_to_send = true;
+
+            Serial.printf("Writing relay pin to %d", rx_command->Message.setVideoActive.videoActive ? 1 : 0);
+
+            digitalWrite(RELAY_PIN, rx_command->Message.setVideoActive.videoActive ? HIGH : LOW);
             break;
         default:
             break;
@@ -214,6 +223,10 @@ void XbeeProSX::readBytes_spi(uint8_t *buffer, size_t length_bytes) {
 
 bool XbeeProSX::canReadSPI() {
     return !ctx->flightMode && digitalRead(_attn_pin) == LOW;
+}
+
+void XbeeProSX::setAcks(bool acks_enabled) {
+    enable_acks = acks_enabled;
 }
 
 void XbeeProSX::handleReceivePacket64Bit(

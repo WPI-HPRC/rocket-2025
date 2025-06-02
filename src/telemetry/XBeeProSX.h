@@ -35,6 +35,8 @@ class XbeeProSX : public XBeeDevice {
 
     void incorrectChecksum(uint8_t calculated, uint8_t received) override;
 
+    void setAcks(bool acks_enabled);
+
     void log(const char *format, ...) override;
 
   private:
@@ -57,6 +59,9 @@ class XbeeProSX : public XBeeDevice {
     HPRC_Packet rx_packet;
     HPRC_Command *rx_command;
     HPRC_CommandResponse tx_command_response;
+
+    bool enable_acks = true;
+
     bool command_response_to_send = false;
 
     FsFile sd_root;
