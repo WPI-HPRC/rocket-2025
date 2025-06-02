@@ -60,6 +60,9 @@ class XbeeProSX : public XBeeDevice {
     HPRC_Command *rx_command;
     HPRC_CommandResponse tx_command_response;
 
+    uint32_t reenable_flightmode_counter = 0;
+    uint32_t last_reenable_flightmode = 0;
+
     bool enable_acks = true;
 
     bool command_response_to_send = false;
