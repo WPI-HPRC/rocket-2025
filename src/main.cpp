@@ -6,6 +6,7 @@
 #include "boilerplate/Looper/Looper.h"
 #include "boilerplate/Sensors/Sensor/Sensor.h"
 #include "boilerplate/StateEstimator/AttEkf.h"
+#include "boilerplate/StateEstimator/PVKF.h"
 #include "states/States.h"
 #include <SPI.h>
 #include <boilerplate/Sensors/SensorManager/SensorManager.h>
@@ -14,6 +15,7 @@
 #include "config.h"
 
 #include "telemetry/XBeeProSX.h"
+
 
 #if defined(MARS)
 SPIClass xbee_spi(XBEE_MOSI, XBEE_MISO, XBEE_SCLK);
@@ -48,6 +50,7 @@ SensorManager sensorManager(sensors, millis);
 StateMachine stateMachine((State *)new PreLaunch(&ctx));
 
 AttStateEstimator quatEkf(ctx.mag.getData(), 0.025);
+PVStateEstimator pvKF(ctx.baro.getData(), ctx.mag.getData(), ctx.gps.getData(), ctx.gps, 0.025);
 
 bool sd_initialized = false;
 bool state = true;
@@ -230,6 +233,15 @@ void xbeeLoop() { xbee.loop(); }
 
 void EKFLoop() {
     static bool attEkfInitialized = false;
+    static bool pvInit = false;
+
+    if(attEkfInitialized && !pvInit){
+        TimedPointer<MAX10SData> gpsData = ctx.gps.getData(); 
+        TimedPointer<LPS22Data> baroData = ctx.baro.getData(); 
+        BLA::Matrix<6,1> initialPV = {gpsData->lat, gpsData->lon, baroData->altitude, 0, 0, 0}; 
+        pvKF.init(initialPV, ctx.quatState); 
+        pvInit = true; 
+    }
 
     if (!attEkfInitialized) {
         quatEkf.init();
@@ -237,12 +249,14 @@ void EKFLoop() {
     }
 
     auto x = quatEkf.onLoop(stateMachine.getCurrentStateId() == ID_PreLaunch);
+    auto pv = pvKF.onLoop(); 
 
     // disabling interrupts here may not be necessary, but it guarantees we
     // don't read context from the high priority interrupt in an invalid state,
     // since that one can preempt this one.
     noInterrupts();
     ctx.quatState = x;
+    //ctx.pvState = pv; 
     interrupts();
 }
 
