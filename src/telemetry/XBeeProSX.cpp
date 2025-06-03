@@ -90,7 +90,7 @@ void XbeeProSX::handleReceivePacket(XBee::ReceivePacket::Struct *frame) {
     istream = pb_istream_from_buffer(frame->data, frame->dataLength_bytes);
     if (pb_decode(&istream, &HPRC_Packet_msg, &rx_packet)) {
         bool response_to_send = false;
-        if (!ctx->flightMode) {
+        if (ctx->flightMode) {
             if (rx_command->which_Message == HPRC_Command_setFlightMode_tag &&
                 !rx_command->Message.setFlightMode.flightModeOn) {
                 reenable_flightmode_counter += 1;

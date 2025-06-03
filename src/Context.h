@@ -20,7 +20,7 @@ struct Context {
     File logFile;
     bool flightMode;
     BLA::Matrix<13, 1> quatState;
-    BLA::Matrix<6,1> pvState; 
+    BLA::Matrix<6,1> pvState;
 
     void logCsvHeader() {
         logFile.print("timestamp,");

@@ -104,9 +104,7 @@ void setup() {
 
     // idk if both of the `write`s are necessary, but it seems to help with it
     // not reseting to neutral for very long
-    ctx.airbrakes.write(SERVO_MIN);
     ctx.airbrakes.init();
-    ctx.airbrakes.write(SERVO_MIN);
 
     Wire.setSCL(SENSOR_SCL);
     Wire.setSDA(SENSOR_SDA);

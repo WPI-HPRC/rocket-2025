@@ -35,8 +35,8 @@
 
     #define RELAY_PIN PE5
 
-    #define SERVO_MIN 1395
-    #define SERVO_MAX 1660
+    #define SERVO_MIN 1500
+    #define SERVO_MAX 1775
 
     #define LED_PIN PB9
 #elif defined(POLARIS)
