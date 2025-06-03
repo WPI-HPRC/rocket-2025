@@ -50,7 +50,7 @@ SensorManager sensorManager(sensors, millis);
 StateMachine stateMachine((State *)new PreLaunch(&ctx));
 
 AttStateEstimator quatEkf(ctx.mag.getData(), 0.025);
-PVStateEstimator pvKF(ctx.baro.getData(), ctx.mag.getData(), ctx.gps.getData(), ctx.gps, 0.025);
+PVStateEstimator pvKF(ctx.baro.getData(), ctx.mag.getData(), ctx.gps.getData(), 0.025);
 
 bool sd_initialized = false;
 bool state = true;
@@ -234,10 +234,12 @@ void xbeeLoop() { xbee.loop(); }
 void EKFLoop() {
     static bool attEkfInitialized = false;
     static bool pvInit = false;
+    static TimedPointer<MAX10SData> gpsData = ctx.gps.getData(); 
+    static TimedPointer<LPS22Data> baroData = ctx.baro.getData(); 
 
-    if(attEkfInitialized && !pvInit){
-        TimedPointer<MAX10SData> gpsData = ctx.gps.getData(); 
-        TimedPointer<LPS22Data> baroData = ctx.baro.getData(); 
+    Serial.println("GPS: " + String(gpsData->gpsLockType)); 
+
+    if(attEkfInitialized && !pvInit && (gpsData->gpsLockType == 3 || gpsData->gpsLockType == 2)){
         BLA::Matrix<6,1> initialPV = {gpsData->lat, gpsData->lon, baroData->altitude, 0, 0, 0}; 
         pvKF.init(initialPV, ctx.quatState); 
         pvInit = true; 
@@ -249,24 +251,29 @@ void EKFLoop() {
     }
 
     auto x = quatEkf.onLoop(stateMachine.getCurrentStateId() == ID_PreLaunch);
-    auto pv = pvKF.onLoop(); 
 
+    if(pvInit){
+        auto pv = pvKF.onLoop(); 
+        noInterrupts(); 
+        ctx.pvState = pv;
+        interrupts(); 
+    }
+    
     // disabling interrupts here may not be necessary, but it guarantees we
     // don't read context from the high priority interrupt in an invalid state,
     // since that one can preempt this one.
     noInterrupts();
     ctx.quatState = x;
-    //ctx.pvState = pv; 
     interrupts();
 }
 
 void loggingLoop() {
-    /*
+    
     ctx.accel.debugPrint(Serial);
     ctx.baro.debugPrint(Serial);
     ctx.gps.debugPrint(Serial);
     ctx.mag.debugPrint(Serial);
-    */
+    
     if (sd_initialized && ctx.logFile) {
         state = !state;
     }
