@@ -11,6 +11,7 @@
 #include <SPI.h>
 #include <boilerplate/Sensors/SensorManager/SensorManager.h>
 #include <boilerplate/StateMachine/StateMachine.h>
+#include "boilerplate/Utilities/SDSerialInterface.h"
 
 #include "config.h"
 
@@ -99,14 +100,19 @@ void setup() {
 
     digitalWrite(PE0, digitalRead(PA3));
     digitalWrite(PE1, digitalRead(PC4));
+
+    pinMode(PC12, INPUT_PULLDOWN);
+
+    if (digitalRead(PC12) == HIGH) {
+        setupSDInterface(&ctx);
+        return;
+    }
 #endif
     Serial.begin(9600);
 
     // idk if both of the `write`s are necessary, but it seems to help with it
     // not reseting to neutral for very long
-    ctx.airbrakes.write(SERVO_MIN);
     ctx.airbrakes.init();
-    ctx.airbrakes.write(SERVO_MIN);
 
     Wire.setSCL(SENSOR_SCL);
     Wire.setSDA(SENSOR_SDA);
@@ -206,25 +212,21 @@ void mainLoop() {
     if (sd_initialized && ctx.logFile) {
         ctx.logFile.print(millis());
         ctx.logFile.print(",");
-        if (lastBaroDataLogged < ctx.baro.getLastTimePolled()) {
-            lastBaroDataLogged = ctx.baro.getLastTimePolled();
-            ctx.baro.logCsvRow(ctx.logFile);
-        }
+
+        ctx.baro.logCsvRow(ctx.logFile,lastBaroDataLogged);
+        lastBaroDataLogged = ctx.baro.getLastTimePolled();
         ctx.logFile.print(",");
-        if (lastAccelDataLogged < ctx.accel.getLastTimePolled()) {
-            lastAccelDataLogged = ctx.accel.getLastTimePolled();
-            ctx.accel.logCsvRow(ctx.logFile);
-        }
+
+        ctx.accel.logCsvRow(ctx.logFile, lastAccelDataLogged);
+        lastAccelDataLogged = ctx.accel.getLastTimePolled();
         ctx.logFile.print(",");
-        if (lastMagDataLogged < ctx.mag.getLastTimePolled()) {
-            lastMagDataLogged = ctx.mag.getLastTimePolled();
-            ctx.mag.logCsvRow(ctx.logFile);
-        }
+
+        ctx.mag.logCsvRow(ctx.logFile, lastMagDataLogged);
+        lastMagDataLogged = ctx.mag.getLastTimePolled();
         ctx.logFile.print(",");
-        if (lastGpsDataLogged < ctx.gps.getLastTimePolled()) {
-            lastGpsDataLogged = ctx.gps.getLastTimePolled();
-            ctx.gps.logCsvRow(ctx.logFile);
-        }
+
+        ctx.gps.logCsvRow(ctx.logFile, lastGpsDataLogged);
+        lastGpsDataLogged = ctx.gps.getLastTimePolled();
         ctx.logFile.println();
     }
 }
@@ -282,4 +284,6 @@ void loggingLoop() {
 
 void occasionalLoop() { ctx.logFile.flush(); }
 
-void loop() {}
+void loop() {
+    handleSDInterface(&ctx);
+}

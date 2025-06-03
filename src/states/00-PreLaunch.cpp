@@ -11,9 +11,5 @@ State *PreLaunch::loop_impl() {
             return new Boost(ctx);
         }
     }
-    // Serial.println("PreLaunch Looped");
-    // if (this->ctx->accel->getData().zAcc > LAUNCH_THRESHHOLD) {
-    //   return (State *)new Boost(this->ctx);
-    // }
     return nullptr;
 }
