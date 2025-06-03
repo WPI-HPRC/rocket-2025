@@ -6,6 +6,7 @@
 #include "boilerplate/Looper/Looper.h"
 #include "boilerplate/Sensors/Sensor/Sensor.h"
 #include "boilerplate/StateEstimator/AttEkf.h"
+#include "boilerplate/StateEstimator/PVKF.h"
 #include "states/States.h"
 #include <SPI.h>
 #include <boilerplate/Sensors/SensorManager/SensorManager.h>
@@ -16,8 +17,10 @@
 
 #include "telemetry/XBeeProSX.h"
 
+
 #if defined(MARS)
 SPIClass xbee_spi(XBEE_MOSI, XBEE_MISO, XBEE_SCLK);
+SPIClass cam_spi(CAM_MOSI, CAM_MISO, CAM_SCK);
 #elif defined(POLARIS)
 SPIClass xbee_spi = SPI;
 #endif
@@ -48,6 +51,7 @@ SensorManager sensorManager(sensors, millis);
 StateMachine stateMachine((State *)new PreLaunch(&ctx));
 
 AttStateEstimator quatEkf(ctx.mag.getData(), 0.025);
+PVStateEstimator pvKF(ctx.baro.getData(), ctx.mag.getData(), ctx.gps.getData(), ctx.gps, 0.025);
 
 bool sd_initialized = false;
 bool state = true;
@@ -108,9 +112,7 @@ void setup() {
 
     // idk if both of the `write`s are necessary, but it seems to help with it
     // not reseting to neutral for very long
-    ctx.airbrakes.write(SERVO_MIN);
     ctx.airbrakes.init();
-    ctx.airbrakes.write(SERVO_MIN);
 
     Wire.setSCL(SENSOR_SCL);
     Wire.setSDA(SENSOR_SDA);
@@ -171,12 +173,29 @@ void setup() {
 #endif
 
     xbee.start();
+    cam_spi.beginTransaction(SPISettings(328125, MSBFIRST, SPI_MODE0));
+
+    pinMode(CAM_CS, OUTPUT);
+    digitalWrite(CAM_CS, HIGH);
+
 
     looper.init();
     lowPrioLooper.init();
 }
 
 void mainLoop() {
+
+    /*
+    Serial.printf("BYTE: ");
+
+    digitalWrite(CAM_CS, LOW);
+    uint8_t *buff = new uint8_t;
+    *buff = 77;
+    cam_spi.transfer(buff, 1);
+    Serial.printf("%d\n", *buff);
+    digitalWrite(CAM_CS, HIGH);
+*/
+
     static uint32_t lastBaroDataLogged = 0;
     static uint32_t lastAccelDataLogged = 0;
     static uint32_t lastMagDataLogged = 0;
@@ -216,6 +235,15 @@ void xbeeLoop() { xbee.loop(); }
 
 void EKFLoop() {
     static bool attEkfInitialized = false;
+    static bool pvInit = false;
+
+    if(attEkfInitialized && !pvInit){
+        TimedPointer<MAX10SData> gpsData = ctx.gps.getData(); 
+        TimedPointer<LPS22Data> baroData = ctx.baro.getData(); 
+        BLA::Matrix<6,1> initialPV = {gpsData->lat, gpsData->lon, baroData->altitude, 0, 0, 0}; 
+        pvKF.init(initialPV, ctx.quatState); 
+        pvInit = true; 
+    }
 
     if (!attEkfInitialized) {
         quatEkf.init();
@@ -223,21 +251,24 @@ void EKFLoop() {
     }
 
     auto x = quatEkf.onLoop(stateMachine.getCurrentStateId() == ID_PreLaunch);
+    auto pv = pvKF.onLoop(); 
 
     // disabling interrupts here may not be necessary, but it guarantees we
     // don't read context from the high priority interrupt in an invalid state,
     // since that one can preempt this one.
     noInterrupts();
     ctx.quatState = x;
+    //ctx.pvState = pv; 
     interrupts();
 }
 
 void loggingLoop() {
+    /*
     ctx.accel.debugPrint(Serial);
     ctx.baro.debugPrint(Serial);
     ctx.gps.debugPrint(Serial);
     ctx.mag.debugPrint(Serial);
-
+    */
     if (sd_initialized && ctx.logFile) {
         state = !state;
     }
