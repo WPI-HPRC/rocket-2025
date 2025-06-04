@@ -65,10 +65,10 @@ void XbeeProSX::loop() {
         telem_packet->gpsLock = ctx->gps.getData()->gpsLockType == 3;
         telem_packet->gpsAltMSL = ctx->gps.getData()->altMSL;
 
-        telem_packet->w = ctx->quatState(AttKFInds::q_w);
-        telem_packet->i = ctx->quatState(AttKFInds::q_x);
-        telem_packet->j = ctx->quatState(AttKFInds::q_y);
-        telem_packet->k = ctx->quatState(AttKFInds::q_z);
+        telem_packet->w = ctx->attEkfLogger.getState()(AttKFInds::q_w);
+        telem_packet->i = ctx->attEkfLogger.getState()(AttKFInds::q_x);
+        telem_packet->j = ctx->attEkfLogger.getState()(AttKFInds::q_y);
+        telem_packet->k = ctx->attEkfLogger.getState()(AttKFInds::q_z);
 
         // Send packet
 

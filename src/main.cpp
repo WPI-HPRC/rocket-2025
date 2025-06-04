@@ -7,16 +7,15 @@
 #include "boilerplate/Sensors/Sensor/Sensor.h"
 #include "boilerplate/StateEstimator/AttEkf.h"
 #include "boilerplate/StateEstimator/PVKF.h"
+#include "boilerplate/Utilities/SDSerialInterface.h"
 #include "states/States.h"
 #include <SPI.h>
 #include <boilerplate/Sensors/SensorManager/SensorManager.h>
 #include <boilerplate/StateMachine/StateMachine.h>
-#include "boilerplate/Utilities/SDSerialInterface.h"
 
 #include "config.h"
 
 #include "telemetry/XBeeProSX.h"
-
 
 #if defined(MARS)
 SPIClass xbee_spi(XBEE_MOSI, XBEE_MISO, XBEE_SCLK);
@@ -39,6 +38,8 @@ Context ctx = {
     .gps = MAX10S(),
     .airbrakes = AirbrakeController(AIRBRAKE_SERVO_PIN, AIRBRAKE_FEEDBACK_PIN),
     .flightMode = false,
+    .attEkfLogger = AttEkfLogger(),
+    .pvKFLogger = PVEkfLogger(),
 };
 
 XbeeProSX xbee = XbeeProSX(&ctx, XBEE_CS, XBEE_ATTN, GROUNDSTATION_XBEE_ADDRESS,
@@ -56,7 +57,6 @@ bool attEkfInitialized = false;
 bool pvInitialized = false;
 
 bool sd_initialized = false;
-bool state = true;
 
 // Outputs the bits in the byte `data` in MSB order over `pin`
 void output_byte(uint8_t data, uint pin) {
@@ -180,7 +180,6 @@ void setup() {
     pinMode(CAM_CS, OUTPUT);
     digitalWrite(CAM_CS, HIGH);
 
-
     looper.init();
     lowPrioLooper.init();
 }
@@ -217,44 +216,24 @@ void mainLoop() {
         ctx.logFile.print(millis());
         ctx.logFile.print(",");
 
-        ctx.baro.logCsvRow(ctx.logFile,lastBaroDataLogged);
-        lastBaroDataLogged = ctx.baro.getLastTimePolled();
+        lastBaroDataLogged = ctx.baro.logCsvRow(ctx.logFile, lastBaroDataLogged);
         ctx.logFile.print(",");
 
-        ctx.accel.logCsvRow(ctx.logFile, lastAccelDataLogged);
-        lastAccelDataLogged = ctx.accel.getLastTimePolled();
+        lastAccelDataLogged = ctx.accel.logCsvRow(ctx.logFile, lastAccelDataLogged);
         ctx.logFile.print(",");
 
-        ctx.mag.logCsvRow(ctx.logFile, lastMagDataLogged);
-        lastMagDataLogged = ctx.mag.getLastTimePolled();
+        lastMagDataLogged = ctx.mag.logCsvRow(ctx.logFile, lastMagDataLogged);
         ctx.logFile.print(",");
 
-        ctx.gps.logCsvRow(ctx.logFile, lastGpsDataLogged);
-        lastGpsDataLogged = ctx.gps.getLastTimePolled();
+        lastGpsDataLogged = ctx.gps.logCsvRow(ctx.logFile, lastGpsDataLogged);
         ctx.logFile.print(",");
 
-        if (attEkfInitialized && millis() - lastAttKfDataLogged >= 25) {
-            ctx.logFile.print(ctx.quatState(AttKFInds::q_w)); ctx.logFile.print(",");
-            ctx.logFile.print(ctx.quatState(AttKFInds::q_x)); ctx.logFile.print(",");
-            ctx.logFile.print(ctx.quatState(AttKFInds::q_y)); ctx.logFile.print(",");
-            ctx.logFile.print(ctx.quatState(AttKFInds::q_z));
-            lastAttKfDataLogged = millis();
-        } else {
-            ctx.logFile.print(",,,");
-        }
+        lastAttKfDataLogged =
+            ctx.attEkfLogger.logCsvRow(ctx.logFile, lastAttKfDataLogged);
         ctx.logFile.print(",");
 
-        if (pvInitialized && millis() - lastPVKfDataLogged >= 25) {
-            ctx.logFile.print(ctx.pvState(0)); ctx.logFile.print(",");
-            ctx.logFile.print(ctx.pvState(1)); ctx.logFile.print(",");
-            ctx.logFile.print(ctx.pvState(2)); ctx.logFile.print(",");
-            ctx.logFile.print(ctx.pvState(3)); ctx.logFile.print(",");
-            ctx.logFile.print(ctx.pvState(4)); ctx.logFile.print(",");
-            ctx.logFile.print(ctx.pvState(5));
-            lastPVKfDataLogged = millis();
-        } else {
-            ctx.logFile.print(",,,,,");
-        }
+        lastPVKfDataLogged =
+            ctx.pvKFLogger.logCsvRow(ctx.logFile, lastPVKfDataLogged);
         ctx.logFile.println();
     }
 }
@@ -262,13 +241,14 @@ void mainLoop() {
 void xbeeLoop() { xbee.loop(); }
 
 void EKFLoop() {
-    static TimedPointer<MAX10SData> gpsData = ctx.gps.getData(); 
-    static TimedPointer<LPS22Data> baroData = ctx.baro.getData(); 
+    static TimedPointer<MAX10SData> gpsData = ctx.gps.getData();
+    static TimedPointer<LPS22Data> baroData = ctx.baro.getData();
 
-    if(attEkfInitialized && !pvInitialized && (gpsData->gpsLockType == 3 || gpsData->gpsLockType == 2)){
-        BLA::Matrix<6,1> initialPV = {gpsData->lat, gpsData->lon, baroData->altitude, 0, 0, 0}; 
-        pvKF.init(initialPV, ctx.quatState); 
-        pvInitialized = true; 
+    if (attEkfInitialized && !pvInitialized &&
+        (gpsData->gpsLockType == 3 || gpsData->gpsLockType == 2)) {
+        BLA::Matrix<6, 1> initialPV = {(float)gpsData->lat, (float)gpsData->lon, baroData->altitude, 0, 0, 0};
+        pvKF.init(initialPV, ctx.attEkfLogger.getState());
+        pvInitialized = true;
     }
 
     if (!attEkfInitialized) {
@@ -278,37 +258,39 @@ void EKFLoop() {
 
     auto x = quatEkf.onLoop(stateMachine.getCurrentStateId() == ID_PreLaunch);
 
-    if(pvInitialized){
-        auto pv = pvKF.onLoop(); 
-        noInterrupts(); 
-        ctx.pvState = pv;
-        interrupts(); 
+    if (pvInitialized) {
+        auto pv = pvKF.onLoop();
+        noInterrupts();
+        ctx.pvKFLogger.newState(pv);
+        interrupts();
     }
-    
+
     // disabling interrupts here may not be necessary, but it guarantees we
     // don't read context from the high priority interrupt in an invalid state,
     // since that one can preempt this one.
     noInterrupts();
-    ctx.quatState = x;
+    ctx.attEkfLogger.newState(x);
     interrupts();
 }
 
 void loggingLoop() {
-    
-    ctx.accel.debugPrint(Serial);
-    ctx.baro.debugPrint(Serial);
-    ctx.gps.debugPrint(Serial);
-    ctx.mag.debugPrint(Serial);
-    Serial.println("---");
-    
+    static bool ledState = true;
+
+    Serial.println(millis());
+    Serial.println(ctx.gps.getInitStatus());
+    ctx.accel.debugLog(Serial);
+    ctx.baro.debugLog(Serial);
+    ctx.gps.debugLog(Serial);
+    ctx.mag.debugLog(Serial);
+    ctx.attEkfLogger.debugLog(Serial);
+    ctx.pvKFLogger.debugLog(Serial);
+
     if (sd_initialized && ctx.logFile) {
-        state = !state;
+        ledState = !ledState;
     }
-    digitalWrite(LED_PIN, state);
+    digitalWrite(LED_PIN, ledState);
 }
 
 void occasionalLoop() { ctx.logFile.flush(); }
 
-void loop() {
-    handleSDInterface(&ctx);
-}
+void loop() { handleSDInterface(&ctx); }

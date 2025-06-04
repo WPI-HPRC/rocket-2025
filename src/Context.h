@@ -2,6 +2,8 @@
 
 #include "BasicLinearAlgebra.h"
 #include "airbrakes/AirbrakeController.h"
+#include "boilerplate/StateEstimator/AttEkf.h"
+#include "boilerplate/StateEstimator/PVKF.h"
 #include "config.h"
 
 struct Context {
@@ -19,8 +21,8 @@ struct Context {
     AirbrakeController airbrakes;
     File logFile;
     bool flightMode;
-    BLA::Matrix<13, 1> quatState;
-    BLA::Matrix<6,1> pvState;
+    AttEkfLogger attEkfLogger;
+    PVEkfLogger pvKFLogger;
 
     void logCsvHeader() {
         logFile.print("timestamp,");
@@ -32,8 +34,9 @@ struct Context {
         logFile.print(",");
         gps.logCsvHeader(logFile);
         logFile.print(",");
-        logFile.print("w,i,j,k,"); // attEkf
-        logFile.print("posX,posY,posZ,velX,velY,velZ"); // pvkf
+        attEkfLogger.logCsvHeader(logFile);
+        logFile.print(",");
+        pvKFLogger.logCsvHeader(logFile);
         logFile.println();
     }
 };
