@@ -52,6 +52,8 @@ StateMachine stateMachine((State *)new PreLaunch(&ctx));
 
 AttStateEstimator quatEkf(ctx.mag.getData(), 0.025);
 PVStateEstimator pvKF(ctx.baro.getData(), ctx.mag.getData(), ctx.gps.getData(), 0.025);
+bool attEkfInitialized = false;
+bool pvInitialized = false;
 
 bool sd_initialized = false;
 bool state = true;
@@ -200,6 +202,8 @@ void mainLoop() {
     static uint32_t lastAccelDataLogged = 0;
     static uint32_t lastMagDataLogged = 0;
     static uint32_t lastGpsDataLogged = 0;
+    static uint32_t lastAttKfDataLogged = 0;
+    static uint32_t lastPVKfDataLogged = 0;
 
 #if defined(MARS)
     digitalWrite(PE0, digitalRead(PA3));
@@ -227,6 +231,30 @@ void mainLoop() {
 
         ctx.gps.logCsvRow(ctx.logFile, lastGpsDataLogged);
         lastGpsDataLogged = ctx.gps.getLastTimePolled();
+        ctx.logFile.print(",");
+
+        if (attEkfInitialized && millis() - lastAttKfDataLogged >= 25) {
+            ctx.logFile.print(ctx.quatState(AttKFInds::q_w)); ctx.logFile.print(",");
+            ctx.logFile.print(ctx.quatState(AttKFInds::q_x)); ctx.logFile.print(",");
+            ctx.logFile.print(ctx.quatState(AttKFInds::q_y)); ctx.logFile.print(",");
+            ctx.logFile.print(ctx.quatState(AttKFInds::q_z));
+            lastAttKfDataLogged = millis();
+        } else {
+            ctx.logFile.print(",,,");
+        }
+        ctx.logFile.print(",");
+
+        if (pvInitialized && millis() - lastPVKfDataLogged >= 25) {
+            ctx.logFile.print(ctx.pvState(0)); ctx.logFile.print(",");
+            ctx.logFile.print(ctx.pvState(1)); ctx.logFile.print(",");
+            ctx.logFile.print(ctx.pvState(2)); ctx.logFile.print(",");
+            ctx.logFile.print(ctx.pvState(3)); ctx.logFile.print(",");
+            ctx.logFile.print(ctx.pvState(4)); ctx.logFile.print(",");
+            ctx.logFile.print(ctx.pvState(5));
+            lastPVKfDataLogged = millis();
+        } else {
+            ctx.logFile.print(",,,,,");
+        }
         ctx.logFile.println();
     }
 }
@@ -234,17 +262,13 @@ void mainLoop() {
 void xbeeLoop() { xbee.loop(); }
 
 void EKFLoop() {
-    static bool attEkfInitialized = false;
-    static bool pvInit = false;
     static TimedPointer<MAX10SData> gpsData = ctx.gps.getData(); 
     static TimedPointer<LPS22Data> baroData = ctx.baro.getData(); 
 
-    Serial.println("GPS: " + String(gpsData->gpsLockType)); 
-
-    if(attEkfInitialized && !pvInit && (gpsData->gpsLockType == 3 || gpsData->gpsLockType == 2)){
+    if(attEkfInitialized && !pvInitialized && (gpsData->gpsLockType == 3 || gpsData->gpsLockType == 2)){
         BLA::Matrix<6,1> initialPV = {gpsData->lat, gpsData->lon, baroData->altitude, 0, 0, 0}; 
         pvKF.init(initialPV, ctx.quatState); 
-        pvInit = true; 
+        pvInitialized = true; 
     }
 
     if (!attEkfInitialized) {
@@ -254,7 +278,7 @@ void EKFLoop() {
 
     auto x = quatEkf.onLoop(stateMachine.getCurrentStateId() == ID_PreLaunch);
 
-    if(pvInit){
+    if(pvInitialized){
         auto pv = pvKF.onLoop(); 
         noInterrupts(); 
         ctx.pvState = pv;
@@ -275,6 +299,7 @@ void loggingLoop() {
     ctx.baro.debugPrint(Serial);
     ctx.gps.debugPrint(Serial);
     ctx.mag.debugPrint(Serial);
+    Serial.println("---");
     
     if (sd_initialized && ctx.logFile) {
         state = !state;

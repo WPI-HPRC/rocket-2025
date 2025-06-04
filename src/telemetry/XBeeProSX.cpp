@@ -46,8 +46,8 @@ void XbeeProSX::loop() {
         telem_packet->altitude = ctx->baro.getData()->altitude;
 
         telem_packet->accelX = ctx->mag.getData()->accelX;
-        telem_packet->accelZ = ctx->mag.getData()->accelY;
-        telem_packet->accelY = ctx->mag.getData()->accelZ;
+        telem_packet->accelY = ctx->mag.getData()->accelY;
+        telem_packet->accelZ = ctx->mag.getData()->accelZ;
 
         telem_packet->gyroX = ctx->mag.getData()->gyrX;
         telem_packet->gyroY = ctx->mag.getData()->gyrY;

@@ -31,6 +31,9 @@ struct Context {
         mag.logCsvHeader(logFile);
         logFile.print(",");
         gps.logCsvHeader(logFile);
+        logFile.print(",");
+        logFile.print("w,i,j,k,"); // attEkf
+        logFile.print("posX,posY,posZ,velX,velY,velZ"); // pvkf
         logFile.println();
     }
 };
