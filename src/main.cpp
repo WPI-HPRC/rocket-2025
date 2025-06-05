@@ -274,10 +274,11 @@ void EKFLoop() {
 }
 
 void loggingLoop() {
+    if (ctx.flightMode) return;
+    
     static bool ledState = true;
 
     Serial.println(millis());
-    Serial.println(ctx.gps.getInitStatus());
     ctx.accel.debugLog(Serial);
     ctx.baro.debugLog(Serial);
     ctx.gps.debugLog(Serial);
