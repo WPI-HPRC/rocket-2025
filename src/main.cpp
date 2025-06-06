@@ -38,12 +38,13 @@ Context ctx = {
     .gps = MAX10S(),
     .airbrakes = AirbrakeController(AIRBRAKE_SERVO_PIN, AIRBRAKE_FEEDBACK_PIN),
     .flightMode = false,
+    .xbeeLoggingDelay = 50,
     .attEkfLogger = AttEkfLogger(),
     .pvKFLogger = PVEkfLogger(),
 };
 
 XbeeProSX xbee = XbeeProSX(&ctx, XBEE_CS, XBEE_ATTN, GROUNDSTATION_XBEE_ADDRESS,
-                           &xbee_spi, 0);
+                           &xbee_spi);
 
 Sensor *sensors[] = {&ctx.accel, &ctx.baro, &ctx.gps, &ctx.mag};
 
@@ -148,8 +149,8 @@ void setup() {
         char filename[100];
         char errorFilename[100];
         while (fileIdx < 100) {
-            sprintf(filename, "flightData%d.csv", fileIdx++);
-            sprintf(errorFilename, "errorLog%d.txt", fileIdx);
+            sprintf(filename, "flightData%d.csv", fileIdx);
+            sprintf(errorFilename, "errorLog%d.txt", fileIdx++);
 
             Serial.printf("Trying files `%s/%s`\n", filename, errorFilename);
 #if defined(MARS)
@@ -216,6 +217,8 @@ void mainLoop() {
     if (sd_initialized && ctx.logFile) {
         ctx.logFile.print(millis());
         ctx.logFile.print(",");
+        ctx.logFile.print(stateMachine.getCurrentStateId());
+        ctx.logFile.print(",");
 
         lastBaroDataLogged = ctx.baro.logCsvRow(ctx.logFile, lastBaroDataLogged);
         ctx.logFile.print(",");
@@ -281,7 +284,7 @@ void loggingLoop() {
     
     static bool ledState = true;
 
-    Serial.println(millis());
+    Serial.printf("%u %u\n", millis(), stateMachine.getCurrentStateId());
     ctx.accel.debugLog(Serial);
     ctx.baro.debugLog(Serial);
     ctx.gps.debugLog(Serial);
@@ -295,6 +298,6 @@ void loggingLoop() {
     digitalWrite(LED_PIN, ledState);
 }
 
-void occasionalLoop() { ctx.logFile.flush(); }
+void occasionalLoop() { ctx.logFile.flush(); ctx.errorLogFile.flush(); }
 
 void loop() { handleSDInterface(&ctx); }

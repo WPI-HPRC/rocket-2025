@@ -22,11 +22,12 @@ struct Context {
     File logFile;
     File errorLogFile;
     bool flightMode;
+    uint32_t xbeeLoggingDelay;
     AttEkfLogger attEkfLogger;
     PVEkfLogger pvKFLogger;
 
     void logCsvHeader() {
-        logFile.print("timestamp,");
+        logFile.print("timestamp,state,");
         baro.logCsvHeader(logFile);
         logFile.print(",");
         accel.logCsvHeader(logFile);

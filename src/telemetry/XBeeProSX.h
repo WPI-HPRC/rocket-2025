@@ -14,7 +14,7 @@
 class XbeeProSX : public XBeeDevice {
   public:
     XbeeProSX(Context *ctx, uint8_t cs_pin, uint8_t attn_pin, long long gs_addr,
-              SPIClass *spi_dev, size_t send_delay = 200);
+              SPIClass *spi_dev);
 
     void writeBytes_spi(char *data_io, size_t length_bytes) override;
 
@@ -45,7 +45,6 @@ class XbeeProSX : public XBeeDevice {
     uint8_t _attn_pin;
     long long gs_addr;
     SPIClass *spi_dev;
-    size_t send_delay;
     size_t last_sent;
 
     uint8_t tx_buf[4096] = {};

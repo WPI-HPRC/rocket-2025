@@ -7,21 +7,24 @@ void Coast::initialize_impl() {
 State *Coast::loop_impl() {
   // FIXME: Some sort of active airbrake control here
 
-  if (lastBaroReadingTime < ctx->baro.getLastTimePolled()) {
-    lastBaroReadingTime = ctx->baro.getLastTimePolled();
+  const auto baroData = ctx->baro.getData();
+
+  if (lastBaroReadingTime != baroData.getLastUpdated()) {
+    lastBaroReadingTime = baroData.getLastUpdated();
 
     if (firstVelCalculated) {
-      avgBaroVel = alpha * (ctx->baro.getData()->altitude - prevAltitude) * this->deltaTime / 1000. + (1 - alpha) * avgBaroVel;
-      if (fabs(avgBaroVel) < APOGEE_VEL_THRESHHOLD) {
+      avgBaroVel = alpha * (baroData->altitude - prevAltitude) * this->deltaTime / 1000. + (1 - alpha) * avgBaroVel;
+      if (coastVelDebouncer.update(fabs(avgBaroVel) < APOGEE_VEL_THRESHHOLD, ::millis())) {
         return new DrogueDescent(this->ctx);
       }
     } else {
-      avgBaroVel = (ctx->baro.getData()->altitude - prevAltitude) * this->deltaTime / 1000.;
+      avgBaroVel = (baroData->altitude - prevAltitude) * this->deltaTime / 1000.;
       firstVelCalculated = true;
     }
   }
 
   if (this->currentTime >= COAST_MAX_TIME) {
+    ctx->errorLogFile.printf("[%d] Coast state timed out\n", ::millis());
     return new DrogueDescent(this->ctx);
   }
   return nullptr;

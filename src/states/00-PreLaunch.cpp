@@ -3,7 +3,7 @@
 void PreLaunch::initialize_impl() {}
 
 State *PreLaunch::loop_impl() {
-    const auto accelData = ctx->accel.getData();
+    const auto accelData = ctx->mag.getData();
     if (accelData.getLastUpdated() != lastAccelReadingTime) {
         lastAccelReadingTime = accelData.getLastUpdated();
         if (launchAccelDebouncer.update(accelData->accelZ > LAUNCH_THRESHHOLD,

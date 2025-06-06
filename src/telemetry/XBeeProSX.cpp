@@ -11,10 +11,9 @@
 #include <cstdarg>
 
 XbeeProSX::XbeeProSX(Context *ctx, uint8_t cs_pin, uint8_t attn_pin,
-                     long long gs_addr, SPIClass *spi_dev, size_t send_delay)
+                     long long gs_addr, SPIClass *spi_dev)
     : XBeeDevice(SerialInterface::SPI), ctx(ctx), _cs_pin(cs_pin),
       _attn_pin(attn_pin), gs_addr(gs_addr), spi_dev(spi_dev),
-      send_delay(send_delay),
       telem_packet(&final_telem_packet.Message.rocketPacket),
       rx_command(&rx_packet.Message.command) {
     sendTransmitRequestsImmediately = true;
@@ -36,7 +35,7 @@ void XbeeProSX::start() {
 
 void XbeeProSX::loop() {
     size_t now = millis();
-    if (now - last_sent > send_delay) {
+    if (now - last_sent >= ctx->xbeeLoggingDelay) {
         last_sent = now;
         // Write packet
         telem_packet->timestamp = now;
@@ -80,10 +79,11 @@ void XbeeProSX::loop() {
         sendTransmitRequestCommand(gs_addr, enable_acks, 0x83, 0x00, tx_buf,
                                    ostream.bytes_written);
         spi_dev->endTransaction();
+
+        spi_dev->beginTransaction(SPISettings(1000000, MSBFIRST, SPI_MODE0));
+        receive();
+        spi_dev->endTransaction();
     }
-    spi_dev->beginTransaction(SPISettings(1000000, MSBFIRST, SPI_MODE0));
-    receive();
-    spi_dev->endTransaction();
 }
 
 void XbeeProSX::handleReceivePacket(XBee::ReceivePacket::Struct *frame) {
@@ -185,6 +185,8 @@ void XbeeProSX::handleReceivePacket(XBee::ReceivePacket::Struct *frame) {
 
             ctx->logFile =
                 ctx->sd.open("flightData0.csv", O_RDWR | O_CREAT | O_TRUNC);
+            ctx->errorLogFile =
+                ctx->sd.open("errorLog0.txt", O_RDWR | O_CREAT | O_TRUNC);
 #elif defined(POLARIS)
             bool success = SD.format();
             success &= SD.begin(SD_CS);
@@ -202,7 +204,7 @@ void XbeeProSX::handleReceivePacket(XBee::ReceivePacket::Struct *frame) {
         case HPRC_Command_setVideoActive_tag:
             tx_command_response.which_Message =
                 HPRC_CommandResponse_setVideoActive_tag;
-            tx_command_response.Message.setVideoActive.success = false;
+            tx_command_response.Message.setVideoActive.success = true;
             response_to_send = true;
 
             Serial.printf("Writing relay pin to %d",
@@ -253,7 +255,7 @@ void XbeeProSX::readBytes_spi(uint8_t *buffer, size_t length_bytes) {
 }
 
 bool XbeeProSX::canReadSPI() {
-    return !ctx->flightMode && digitalRead(_attn_pin) == LOW;
+    return digitalRead(_attn_pin) == LOW;
 }
 
 void XbeeProSX::setAcks(bool acks_enabled) { enable_acks = acks_enabled; }

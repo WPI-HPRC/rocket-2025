@@ -5,21 +5,24 @@ void DrogueDescent::initialize_impl() {
 }
 
 State *DrogueDescent::loop_impl() {
-  if (lastBaroReadingTime < ctx->baro.getLastTimePolled()) {
-    lastBaroReadingTime = ctx->baro.getLastTimePolled();
+  const auto baroData = ctx->baro.getData();
+
+  if (lastBaroReadingTime < baroData.getLastUpdated()) {
+    lastBaroReadingTime = baroData.getLastUpdated();
 
     if (firstVelCalculated) {
-      avgBaroVel = alpha * (ctx->baro.getData()->altitude - prevAltitude) * this->deltaTime / 1000. + (1 - alpha) * avgBaroVel;
-      if (fabs(avgBaroVel) < (fabs(MAIN_DESCENT_VELOCITY) + fabs(DROGUE_DESCENT_VELOCITY)) / 2) {
+      avgBaroVel = alpha * (baroData->altitude - prevAltitude) * this->deltaTime / 1000. + (1 - alpha) * avgBaroVel;
+      if (fabs(avgBaroVel) < DROGUE_DESCENT_VEL_THRESHHOLD) {
         return new MainDescent(this->ctx);
       }
     } else {
-      avgBaroVel = (ctx->baro.getData()->altitude - prevAltitude) * this->deltaTime / 1000.;
+      avgBaroVel = (baroData->altitude - prevAltitude) * this->deltaTime / 1000.;
       firstVelCalculated = true;
     }
   }
 
   if (this->currentTime >= DROGUE_DESCENT_MAX_TIME) {
+    ctx->errorLogFile.printf("[%d] DrougeDescent state timed out\n", ::millis());
     return new MainDescent(this->ctx);
   }
   
