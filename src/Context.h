@@ -20,6 +20,7 @@ struct Context {
     MAX10S gps;
     AirbrakeController airbrakes;
     File logFile;
+    File errorLogFile;
     bool flightMode;
     AttEkfLogger attEkfLogger;
     PVEkfLogger pvKFLogger;

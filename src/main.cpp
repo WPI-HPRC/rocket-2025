@@ -53,8 +53,6 @@ StateMachine stateMachine((State *)new PreLaunch(&ctx));
 
 AttStateEstimator quatEkf(ctx.mag.getData(), 0.025);
 PVStateEstimator pvKF(ctx.baro.getData(), ctx.mag.getData(), ctx.gps.getData(), 0.025);
-bool attEkfInitialized = false;
-bool pvInitialized = false;
 
 bool sd_initialized = false;
 
@@ -148,13 +146,16 @@ void setup() {
     if (sd_initialized) {
         int fileIdx = 0;
         char filename[100];
+        char errorFilename[100];
         while (fileIdx < 100) {
             sprintf(filename, "flightData%d.csv", fileIdx++);
+            sprintf(errorFilename, "errorLog%d.txt", fileIdx);
 
-            Serial.printf("Trying file `%s`\n", filename);
+            Serial.printf("Trying files `%s/%s`\n", filename, errorFilename);
 #if defined(MARS)
             if (!ctx.sd.exists(filename)) {
                 ctx.logFile = ctx.sd.open(filename, O_RDWR | O_CREAT | O_TRUNC);
+                ctx.errorLogFile = ctx.sd.open(errorFilename, O_RDWR | O_CREAT | O_TRUNC);
                 break;
             }
 #elif defined(POLARIS)
@@ -243,6 +244,8 @@ void xbeeLoop() { xbee.loop(); }
 void EKFLoop() {
     static TimedPointer<MAX10SData> gpsData = ctx.gps.getData();
     static TimedPointer<LPS22Data> baroData = ctx.baro.getData();
+    static bool attEkfInitialized = false;
+    static bool pvInitialized = false;
 
     if (attEkfInitialized && !pvInitialized &&
         (gpsData->gpsLockType == 3 || gpsData->gpsLockType == 2)) {
