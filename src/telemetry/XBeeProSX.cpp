@@ -71,6 +71,13 @@ void XbeeProSX::loop() {
         telem_packet->j = ctx->attEkfLogger.getState()(AttKFInds::q_y);
         telem_packet->k = ctx->attEkfLogger.getState()(AttKFInds::q_z);
 
+        telem_packet->posX = ctx->pvKFLogger.getState()(0);
+        telem_packet->posY = ctx->pvKFLogger.getState()(1);
+        telem_packet->posZ = ctx->pvKFLogger.getState()(2);
+        telem_packet->velX = ctx->pvKFLogger.getState()(3);
+        telem_packet->velY = ctx->pvKFLogger.getState()(4);
+        telem_packet->velZ = ctx->pvKFLogger.getState()(5);
+
         // Send packet
 
         final_packet.which_Message = HPRC_Packet_telemetry_tag;
