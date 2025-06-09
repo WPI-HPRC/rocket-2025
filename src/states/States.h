@@ -6,6 +6,7 @@
 #include "../boilerplate/Utilities/Debouncer.h"
 #include "FlightParams.h"
 #include "boilerplate/Utilities/RunningExpAverage.h"
+#include "boilerplate/Utilities/TimeAverage.h"
 #include <Arduino.h>
 
 enum StateId {
@@ -34,6 +35,9 @@ class PreLaunch : public State {
 
     Debouncer accelDebouncer = Debouncer(500);
     uint32_t lastAccelReadingTime = 0;
+    TimeAverage<float, 50> altAverager{};
+    uint32_t lastBaroReadingTime = 0;
+    bool savedInitialAltitude = false;
 };
 
 class Boost : public State {

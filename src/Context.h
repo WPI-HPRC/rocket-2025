@@ -25,6 +25,7 @@ struct Context {
     uint32_t xbeeLoggingDelay;
     AttEkfLogger attEkfLogger;
     PVEkfLogger pvKFLogger;
+    float initialAltitude;
 
     void logCsvHeader() {
         logFile.print("timestamp,state,flightMode,");
