@@ -9,7 +9,7 @@ State *Boost::loop_impl() {
         // NOTE: the lack of absolute value here is intentional: we may experience
         // negative z acceleration due to drag which is larger in magnitude than the
         // threshhold
-        if (boostAccelDebouncer.update(accelData->accelZ < BURNOUT_THRESHHOLD, ::millis())) {
+        if (accelDebouncer.update(accelData->accelZ < BURNOUT_THRESHHOLD, ::millis())) {
             return new Coast(this->ctx);
         }
         if (this->currentTime >= BOOST_MAX_TIME) {

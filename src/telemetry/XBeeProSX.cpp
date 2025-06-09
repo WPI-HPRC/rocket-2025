@@ -20,6 +20,7 @@ XbeeProSX::XbeeProSX(Context *ctx, uint8_t cs_pin, uint8_t attn_pin,
     sendFramesImmediately = true;
 
     final_telem_packet.which_Message = HPRC_Telemetry_rocketPacket_tag;
+    telem_packet->loopCount = 0;
 }
 
 void XbeeProSX::start() {
@@ -39,6 +40,7 @@ void XbeeProSX::loop() {
         last_sent = now;
         // Write packet
         telem_packet->timestamp = now;
+        telem_packet->loopCount++;
 
         telem_packet->pressure = ctx->baro.getData()->pressure;
         telem_packet->temperature = ctx->baro.getData()->temperature;
@@ -68,6 +70,13 @@ void XbeeProSX::loop() {
         telem_packet->i = ctx->attEkfLogger.getState()(AttKFInds::q_x);
         telem_packet->j = ctx->attEkfLogger.getState()(AttKFInds::q_y);
         telem_packet->k = ctx->attEkfLogger.getState()(AttKFInds::q_z);
+
+        telem_packet->posX = ctx->pvKFLogger.getState()(0);
+        telem_packet->posY = ctx->pvKFLogger.getState()(1);
+        telem_packet->posZ = ctx->pvKFLogger.getState()(2);
+        telem_packet->velX = ctx->pvKFLogger.getState()(3);
+        telem_packet->velY = ctx->pvKFLogger.getState()(4);
+        telem_packet->velZ = ctx->pvKFLogger.getState()(5);
 
         // Send packet
 

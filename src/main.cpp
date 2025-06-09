@@ -12,6 +12,7 @@
 #include <SPI.h>
 #include <boilerplate/Sensors/SensorManager/SensorManager.h>
 #include <boilerplate/StateMachine/StateMachine.h>
+#include <IWatchdog.h>
 
 #include "config.h"
 
@@ -184,6 +185,8 @@ void setup() {
 
     looper.init();
     lowPrioLooper.init();
+
+    IWatchdog.begin(4000000);
 }
 
 void mainLoop() {
@@ -219,6 +222,8 @@ void mainLoop() {
         ctx.logFile.print(",");
         ctx.logFile.print(stateMachine.getCurrentStateId());
         ctx.logFile.print(",");
+        ctx.logFile.print(ctx.flightMode);
+        ctx.logFile.print(",");
 
         lastBaroDataLogged = ctx.baro.logCsvRow(ctx.logFile, lastBaroDataLogged);
         ctx.logFile.print(",");
@@ -238,6 +243,9 @@ void mainLoop() {
 
         lastPVKfDataLogged =
             ctx.pvKFLogger.logCsvRow(ctx.logFile, lastPVKfDataLogged);
+        ctx.logFile.print(",");
+
+        ctx.logFile.print(ctx.airbrakes.read());
         ctx.logFile.println();
     }
 }
@@ -300,4 +308,4 @@ void loggingLoop() {
 
 void occasionalLoop() { ctx.logFile.flush(); ctx.errorLogFile.flush(); }
 
-void loop() { handleSDInterface(&ctx); }
+void loop() { handleSDInterface(&ctx); IWatchdog.reload(); }
