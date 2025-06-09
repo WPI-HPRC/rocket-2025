@@ -27,7 +27,7 @@ struct Context {
     PVEkfLogger pvKFLogger;
 
     void logCsvHeader() {
-        logFile.print("timestamp,state,");
+        logFile.print("timestamp,state,flightMode,");
         baro.logCsvHeader(logFile);
         logFile.print(",");
         accel.logCsvHeader(logFile);
@@ -39,6 +39,7 @@ struct Context {
         attEkfLogger.logCsvHeader(logFile);
         logFile.print(",");
         pvKFLogger.logCsvHeader(logFile);
+        logFile.print(",airbrakeServo");
         logFile.println();
     }
 };
