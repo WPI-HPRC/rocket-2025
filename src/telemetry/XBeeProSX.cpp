@@ -20,6 +20,7 @@ XbeeProSX::XbeeProSX(Context *ctx, uint8_t cs_pin, uint8_t attn_pin,
     sendFramesImmediately = true;
 
     final_telem_packet.which_Message = HPRC_Telemetry_rocketPacket_tag;
+    telem_packet->loopCount = 0;
 }
 
 void XbeeProSX::start() {
@@ -39,6 +40,7 @@ void XbeeProSX::loop() {
         last_sent = now;
         // Write packet
         telem_packet->timestamp = now;
+        telem_packet->loopCount++;
 
         telem_packet->pressure = ctx->baro.getData()->pressure;
         telem_packet->temperature = ctx->baro.getData()->temperature;
