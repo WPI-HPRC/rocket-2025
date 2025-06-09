@@ -5,6 +5,7 @@
 #include "../boilerplate/StateMachine/StateMachine.h"
 #include "../boilerplate/Utilities/Debouncer.h"
 #include "FlightParams.h"
+#include "boilerplate/Utilities/RunningExpAverage.h"
 #include <Arduino.h>
 
 enum StateId {
@@ -46,10 +47,9 @@ class Coast : public State {
     STATE_INNER(Coast)
 
     // FIXME: probably way to big
-    constexpr static float alpha = 0.3; // smoothing coefficient. 0 <= alpha <= 1. Values near 0 prioritize old values (more smoothing) and values near 1 prioritize new values (less smoothing).
+    RunningExpAverage<float> ewma{0.3};
     bool firstVelCalculated = false;
     float prevAltitude = 0;
-    float avgBaroVel = 0;
     Debouncer velDebouncer = Debouncer(100);
     uint32_t lastBaroReadingTime = 0;
 };
@@ -57,10 +57,9 @@ class Coast : public State {
 class DrogueDescent : public State {
     STATE_INNER(DrogueDescent)
 
-    constexpr static float alpha = 0.3; // smoothing coefficient. 0 <= alpha <= 1. Values near 0 prioritize old values (more smoothing) and values near 1 prioritize new values (less smoothing).
+    RunningExpAverage<float> ewma{0.3};
     float prevAltitude = 0;
     bool firstVelCalculated = false;
-    float avgBaroVel = 0;
     Debouncer velDebouncer = Debouncer(50);
     uint32_t lastBaroReadingTime = 0;
 };
@@ -68,10 +67,9 @@ class DrogueDescent : public State {
 class MainDescent : public State {
     STATE_INNER(MainDescent)
 
-    constexpr static float alpha = 0.1; // smoothing coefficient. 0 <= alpha <= 1. Values near 0 prioritize old values (more smoothing) and values near 1 prioritize new values (less smoothing).
+    RunningExpAverage<float> ewma{0.1};
     float prevAltitude = 0;
     bool firstVelCalculated = false;
-    float avgBaroVel = 0;
     Debouncer velDebouncer = Debouncer(50);
     uint32_t lastBaroReadingTime = 0;
 };

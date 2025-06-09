@@ -12,14 +12,9 @@ State *Coast::loop_impl() {
   if (lastBaroReadingTime != baroData.getLastUpdated()) {
     lastBaroReadingTime = baroData.getLastUpdated();
 
-    if (firstVelCalculated) {
-      avgBaroVel = alpha * (baroData->altitude - prevAltitude) * this->deltaTime / 1000. + (1 - alpha) * avgBaroVel;
-      if (velDebouncer.update(std::abs(avgBaroVel) < APOGEE_VEL_THRESHHOLD, ::millis())) {
-        return new DrogueDescent(this->ctx);
-      }
-    } else {
-      avgBaroVel = (baroData->altitude - prevAltitude) * this->deltaTime / 1000.;
-      firstVelCalculated = true;
+    ewma.update((baroData->altitude - prevAltitude) * this->deltaTime / 1000.);
+    if (velDebouncer.update(std::abs(ewma.getAvg()) < APOGEE_VEL_THRESHHOLD, ::millis())) {
+      return new DrogueDescent(this->ctx);
     }
   }
 

@@ -10,14 +10,9 @@ State *DrogueDescent::loop_impl() {
   if (lastBaroReadingTime < baroData.getLastUpdated()) {
     lastBaroReadingTime = baroData.getLastUpdated();
 
-    if (firstVelCalculated) {
-      avgBaroVel = alpha * (baroData->altitude - prevAltitude) * this->deltaTime / 1000. + (1 - alpha) * avgBaroVel;
-      if (velDebouncer.update(std::abs(avgBaroVel) < DROGUE_DESCENT_VEL_THRESHHOLD, ::millis())) {
-        return new MainDescent(this->ctx);
-      }
-    } else {
-      avgBaroVel = (baroData->altitude - prevAltitude) * this->deltaTime / 1000.;
-      firstVelCalculated = true;
+    ewma.update((baroData->altitude - prevAltitude) * this->deltaTime / 1000.);
+    if (velDebouncer.update(std::abs(ewma.getAvg()) < DROGUE_DESCENT_VEL_THRESHHOLD, ::millis())) {
+      return new MainDescent(this->ctx);
     }
   }
 
