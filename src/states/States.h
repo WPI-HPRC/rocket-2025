@@ -31,14 +31,14 @@ using StateMachine = TStateMachine<Context, StateId, decltype(&millis)>;
 class PreLaunch : public State {
     STATE_INNER(PreLaunch)
 
-    Debouncer launchAccelDebouncer = Debouncer(500);
+    Debouncer accelDebouncer = Debouncer(500);
     uint32_t lastAccelReadingTime = 0;
 };
 
 class Boost : public State {
     STATE_INNER(Boost)
 
-    Debouncer boostAccelDebouncer = Debouncer(100);
+    Debouncer accelDebouncer = Debouncer(100);
     uint32_t lastAccelReadingTime = 0;
 };
 
@@ -50,7 +50,7 @@ class Coast : public State {
     bool firstVelCalculated = false;
     float prevAltitude = 0;
     float avgBaroVel = 0;
-    Debouncer coastVelDebouncer = Debouncer(100);
+    Debouncer velDebouncer = Debouncer(100);
     uint32_t lastBaroReadingTime = 0;
 };
 
@@ -61,6 +61,7 @@ class DrogueDescent : public State {
     float prevAltitude = 0;
     bool firstVelCalculated = false;
     float avgBaroVel = 0;
+    Debouncer velDebouncer = Debouncer(50);
     uint32_t lastBaroReadingTime = 0;
 };
 
@@ -71,6 +72,7 @@ class MainDescent : public State {
     float prevAltitude = 0;
     bool firstVelCalculated = false;
     float avgBaroVel = 0;
+    Debouncer velDebouncer = Debouncer(50);
     uint32_t lastBaroReadingTime = 0;
 };
 

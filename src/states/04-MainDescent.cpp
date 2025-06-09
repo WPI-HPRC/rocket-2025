@@ -12,7 +12,7 @@ State *MainDescent::loop_impl() {
 
     if (firstVelCalculated) {
       avgBaroVel = alpha * (baroData->altitude - prevAltitude) * this->deltaTime / 1000. + (1 - alpha) * avgBaroVel;
-      if (fabs(avgBaroVel) < LANDED_VEL_THRESHHOLD) {
+      if (velDebouncer.update(std::abs(avgBaroVel) < LANDED_VEL_THRESHHOLD, ::millis())) {
         return new Recovery(this->ctx);
       }
     } else {

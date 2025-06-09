@@ -12,7 +12,7 @@ State *DrogueDescent::loop_impl() {
 
     if (firstVelCalculated) {
       avgBaroVel = alpha * (baroData->altitude - prevAltitude) * this->deltaTime / 1000. + (1 - alpha) * avgBaroVel;
-      if (fabs(avgBaroVel) < DROGUE_DESCENT_VEL_THRESHHOLD) {
+      if (velDebouncer.update(std::abs(avgBaroVel) < DROGUE_DESCENT_VEL_THRESHHOLD, ::millis())) {
         return new MainDescent(this->ctx);
       }
     } else {

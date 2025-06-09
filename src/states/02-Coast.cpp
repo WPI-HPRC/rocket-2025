@@ -14,7 +14,7 @@ State *Coast::loop_impl() {
 
     if (firstVelCalculated) {
       avgBaroVel = alpha * (baroData->altitude - prevAltitude) * this->deltaTime / 1000. + (1 - alpha) * avgBaroVel;
-      if (coastVelDebouncer.update(fabs(avgBaroVel) < APOGEE_VEL_THRESHHOLD, ::millis())) {
+      if (velDebouncer.update(std::abs(avgBaroVel) < APOGEE_VEL_THRESHHOLD, ::millis())) {
         return new DrogueDescent(this->ctx);
       }
     } else {
