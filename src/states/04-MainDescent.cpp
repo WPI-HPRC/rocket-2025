@@ -10,7 +10,7 @@ State *MainDescent::loop_impl() {
   if (lastBaroReadingTime < baroData.getLastUpdated()) {
     lastBaroReadingTime = baroData.getLastUpdated();
 
-    ewma.update((baroData->altitude - prevAltitude) * this->deltaTime / 1000.);
+    ewma.update((baroData->altitude - prevAltitude) * (::millis() - lastBaroReadingTime) / 1000.);
     if (velDebouncer.update(std::abs(ewma.getAvg()) < LANDED_VEL_THRESHHOLD, ::millis())) {
       return new Recovery(this->ctx);
     }
