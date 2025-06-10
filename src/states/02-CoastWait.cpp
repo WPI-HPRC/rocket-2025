@@ -11,7 +11,7 @@ State *CoastWait::loop_impl() {
 
     // more accurate suposedly so better to use
     if (magData.getLastUpdated() != lastMagReadingTime) {
-        const auto rotM = QuaternionUtils::quatToRot(ctx->attEkfLogger.getState());
+        const auto rotM = QuaternionUtils::quatToInvRot(ctx->attEkfLogger.getState());
         const auto rotatedAccel = rotM * BLA::Matrix<3, 1>{magData->accelX, magData->accelY, magData->accelZ};
         velocityFilter.updateDelta(rotatedAccel(1) * (::millis() - magData.getLastUpdated()));
 
