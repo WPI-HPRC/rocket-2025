@@ -13,8 +13,7 @@ State *CoastWait::loop_impl() {
     if (magData.getLastUpdated() != lastMagReadingTime) {
         const auto rotM = QuaternionUtils::quatToRot(ctx->attEkfLogger.getState());
         const auto rotatedAccel = rotM * BLA::Matrix<3, 1>{magData->accelX, magData->accelY, magData->accelZ};
-        // FIXME: find the correct entry of this vector
-        velocityFilter.updateDelta(rotatedAccel(2) * (::millis() - magData.getLastUpdated()));
+        velocityFilter.updateDelta(rotatedAccel(1) * (::millis() - magData.getLastUpdated()));
 
         lastMagReadingTime = magData.getLastUpdated();
     }

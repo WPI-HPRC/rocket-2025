@@ -17,7 +17,6 @@ class AirbrakeController {
 
     int getCurrDeploy() { return current_break_deploy; }
 
-    // float controlBreak();
     float deployAmmount(float acc_z, float v_z, float alt);
 
   private:
