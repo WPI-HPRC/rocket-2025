@@ -15,10 +15,13 @@ class AirbrakeController {
 
     int read();
 
-    float controlBreak();
+    int getCurrDeploy() { return current_break_deploy; }
+
+    // float controlBreak();
+    float deployAmmount(float acc_z, float v_z, float alt);
 
   private:
-    float deployAmmount(float acc_z, float v_z, float alt, float curr_deploy);
+    // float deployAmmount(float acc_z, float v_z, float alt, float curr_deploy);
     // acc_z = (acc_z - g)*-g
     // target_height = alt - (v_z)^2/2acc_z_gloal
 

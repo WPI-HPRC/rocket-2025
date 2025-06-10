@@ -1,5 +1,6 @@
 #include "States.h"
 #include "boilerplate/Utilities/QuaternionUtils.h"
+#include "config.h"
 
 void CoastAirbrake::initialize_impl() {
     velocityFilter.ignoreAbsolute();
@@ -40,8 +41,11 @@ State *CoastAirbrake::loop_impl() {
         lastBaroReadingTime = baroData.getLastUpdated();
     }
 
-    // return deployAmmount(acc_z_best, velocityFilter.getVal(), alt_best,
-    //                      current_break_deploy);
+    // compute brake
+    float deploy = ctx->airbrakes.deployAmmount(acc_z_best, velocityFilter.getVal(), alt_best);
+    
+    // deploy brake
+    ctx->airbrakes.write(SERVO_MIN + (deploy * (SERVO_MAX - SERVO_MIN));
 
     if (currentTime >= COAST_AIRBRAKE_TIME) {
         return new CoastEnd(ctx);

@@ -1,4 +1,5 @@
 #include "AirbrakeController.h"
+#include "boilerplate/StateEstimator/kfConsts.h"
 #include "FlightParams.h"
 
 void AirbrakeController::init() {
@@ -10,8 +11,7 @@ void AirbrakeController::write(int val) { servo.writeMicroseconds(val); }
 
 int AirbrakeController::read() { return analogRead(feedback_pin); }
 
-float AirbrakeController::deployAmmount(float acc_z, float v_z, float alt,
-                                        float curr_deploy) {
+float AirbrakeController::deployAmmount(float acc_z, float v_z, float alt) {
     acc_z = (acc_z - 1) * g * -1;
 
     float curr_max_height = alt - (v_z * v_z) / (2 * acc_z);
@@ -19,11 +19,7 @@ float AirbrakeController::deployAmmount(float acc_z, float v_z, float alt,
     if (curr_max_height <= TARGET_APOGEE - 25) {
         return 0;
     } else {
-        float new_deploy = curr_deploy * 1.05;
+        float new_deploy = current_break_deploy * 1.05;
         return (new_deploy >= 1 ? 1 : new_deploy);
     }
-}
-
-float AirbrakeController::controlBreak() {
-    // still need to get v_z from somewhere
 }
