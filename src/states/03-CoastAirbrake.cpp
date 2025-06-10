@@ -1,0 +1,50 @@
+#include "States.h"
+#include "boilerplate/Utilities/QuaternionUtils.h"
+
+void CoastAirbrake::initialize_impl() {
+    velocityFilter.ignoreAbsolute();
+}
+
+State *CoastAirbrake::loop_impl() {
+    const auto baroData = ctx->baro.getData();
+    const auto accData = ctx->accel.getData();
+    const auto magData = ctx->mag.getData();
+    const auto rotM = QuaternionUtils::quatToRot(ctx->attEkfLogger.getState());
+    
+    const auto rotatedAccel = rotM * BLA::Matrix<3, 1>{accData->accelX, accData->accelY, accData->accelZ};
+    float acc_z_best = rotatedAccel(2);
+    float alt_best = baroData->altitude;
+    // populate in case no new data to use
+
+    if (accData.getLastUpdated() != lastAccelReadingTime) {
+        const auto rotatedAccel = rotM * BLA::Matrix<3, 1>{accData->accelX, accData->accelY, accData->accelZ};
+        // FIXME: find the correct entry of this vector
+        velocityFilter.updateDelta(rotatedAccel(2) * (::millis() - accData.getLastUpdated()));
+
+        acc_z_best = accData->accelZ;
+        lastAccelReadingTime = accData.getLastUpdated();
+    }
+
+    // more accurate suposedly so better to use
+    if (magData.getLastUpdated() != lastMagReadingTime) {
+        const auto rotatedAccel = rotM * BLA::Matrix<3, 1>{accData->accelX, accData->accelY, accData->accelZ};
+        // FIXME: find the correct entry of this vector
+        velocityFilter.updateDelta(rotatedAccel(2) * (::millis() - magData.getLastUpdated()));
+
+        acc_z_best = magData->accelZ;
+        lastMagReadingTime = magData.getLastUpdated();
+    }
+
+    if (baroData.getLastUpdated() != lastBaroReadingTime) {
+        alt_best = baroData->altitude - ctx->initialAltitude;
+        lastBaroReadingTime = baroData.getLastUpdated();
+    }
+
+    // return deployAmmount(acc_z_best, velocityFilter.getVal(), alt_best,
+    //                      current_break_deploy);
+
+    if (currentTime >= COAST_AIRBRAKE_TIME) {
+        return new CoastEnd(ctx);
+    }
+    return nullptr;
+}
