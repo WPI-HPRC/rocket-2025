@@ -44,7 +44,8 @@ void XbeeProSX::loop() {
 
         telem_packet->pressure = ctx->baro.getData()->pressure;
         telem_packet->temperature = ctx->baro.getData()->temperature;
-        telem_packet->altitude = ctx->baro.getData()->altitude;
+        telem_packet->altitude = ctx->baro.getData()->altitude; // FIXME: should this be agl, or will that be computed on the ground?
+        telem_packet->launchAltitude = ctx->initialAltitude;
 
         telem_packet->accelX = ctx->mag.getData()->accelX;
         telem_packet->accelY = ctx->mag.getData()->accelY;
