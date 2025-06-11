@@ -12,8 +12,6 @@ State *CoastWait::loop_impl() {
     const auto magData = ctx->mag.getData();
     static bool firstBaro = true;
 
-    if (currentTime <= 1000) return nullptr;
-
     // more accurate suposedly so better to use
     if (magData.getLastUpdated() != lastMagReadingTime) {
         const auto rotM = QuaternionUtils::quatToRot(ctx->attEkfLogger.getState());

@@ -10,7 +10,7 @@ State *CoastAirbrake::loop_impl() {
     const auto baroData = ctx->baro.getData();
     const auto accData = ctx->accel.getData();
     const auto magData = ctx->mag.getData();
-    const auto rotM = QuaternionUtils::quatToRot(ctx->attEkfLogger.getState());
+    const auto rotM = QuaternionUtils::quatToInvRot(ctx->attEkfLogger.getState());
     
     const auto rotatedAccel = rotM * BLA::Matrix<3, 1>{magData->accelX, magData->accelY, magData->accelZ};
     float acc = rotatedAccel(2) + 1;
