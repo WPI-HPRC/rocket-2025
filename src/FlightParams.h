@@ -3,6 +3,11 @@
 #include <cmath>
 #include <cstdint>
 
+// total time to apogee 25.2s
+// motor burns for 5s
+// total flight time 178s
+// drogue for 105s
+
 constexpr float LAUNCH_THRESHHOLD = 5; // [g] upwards acceleration greater than this value = launch detected
 
 constexpr uint32_t BOOST_MAX_TIME = 3000; // [ms] FIXME: put actual value here
@@ -16,8 +21,8 @@ constexpr float APOGEE_VEL_THRESHHOLD = 0.3; // [m/s] magnitude of velocity (num
 constexpr float TARGET_APOGEE = 3048; // [m] 10,000 feet in meters
 
 constexpr uint32_t DROGUE_DESCENT_MAX_TIME = 5000; // [ms] FIXME: put actual value here
-constexpr float DROGUE_DESCENT_VELOCITY = 23; // [m/s] magnitude of expected velocity during drogue descent FIXME: put actual value here
-constexpr float MAIN_DESCENT_VELOCITY = 10; // [m/s] magnitude of expected velocity during main descent FIXME: put actual value here
+constexpr float DROGUE_DESCENT_VELOCITY = 23; // 90 ft/s // [m/s] magnitude of expected velocity during drogue descent FIXME: put actual value here
+constexpr float MAIN_DESCENT_VELOCITY = 10; // 20 ft/s // [m/s] magnitude of expected velocity during main descent FIXME: put actual value here
 constexpr float DROGUE_DESCENT_VEL_THRESHHOLD = (std::abs(MAIN_DESCENT_VELOCITY) + std::abs(DROGUE_DESCENT_VELOCITY)) / 2;
 
 constexpr uint32_t MAIN_DESCENT_MAX_TIME = 5000; // [ms] FIXME: put actual value here

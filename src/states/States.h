@@ -65,7 +65,8 @@ class CoastWait : public State {
     STATE_INNER
 
     ComplementaryFilter velocityFilter{0.001};
-    RunningExpAverage<float> ewma{0.3};
+    RunningExpAverage<float> deltaV_ewma{0.1};
+    RunningExpAverage<float> ewma{0.1};
     float prevAltitude = 0;
 
     uint32_t lastBaroReadingTime = 0;

@@ -17,7 +17,7 @@ class AirbrakeController {
 
     int getCurrDeploy() { return current_break_deploy; }
 
-    float deployAmmount(float acc_z, float v_z, float alt);
+    float deployAmount(float acc_z, float v_z, float alt);
 
   private:
     // float deployAmmount(float acc_z, float v_z, float alt, float curr_deploy);

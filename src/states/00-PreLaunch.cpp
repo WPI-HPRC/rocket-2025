@@ -23,5 +23,7 @@ State *PreLaunch::loop_impl() {
             ctx->errorLogFile.printf("[%u] Initial altitude: %f m\n", ::millis(), ctx->initialAltitude);
         }
     }
+
+    if (currentTime >= 1000) return new CoastWait(ctx);
     return nullptr;
 }
