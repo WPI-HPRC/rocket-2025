@@ -19,6 +19,8 @@ class AirbrakeController {
 
     float deployAmount(float acc_z, float v_z, float alt);
 
+    float constantDeploy();
+
   private:
     // float deployAmmount(float acc_z, float v_z, float alt, float curr_deploy);
     // acc_z = (acc_z - g)*-g
@@ -29,4 +31,5 @@ class AirbrakeController {
     Servo servo;
     float init_break_deploy;
     float current_break_deploy;
+    float CONSTANT_DEPLOY = 0.8;
 };

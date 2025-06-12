@@ -17,17 +17,17 @@ State *CoastWait::loop_impl() {
         const auto rotM = QuaternionUtils::quatToRot(ctx->attEkfLogger.getState());
         const auto accel = BLA::Matrix<3, 1>{magData->accelX, magData->accelY, magData->accelZ};
         const auto rotatedAccel = rotM * accel;
-        Serial.println(accel);
-        Serial.println(rotatedAccel);
+        //Serial.println(accel);
+        //Serial.println(rotatedAccel);
         float acc = rotatedAccel(2) + 1;
         if (std::abs(acc) <= 0.05) acc = 0;
         acc = -g * (acc) * (magData.getLastUpdated() - lastMagReadingTime) / 1000.;
-        Serial.println("Accel delta v: " + String(acc, 3));
+        //Serial.println("Accel delta v: " + String(acc, 3));
         deltaV_ewma.update(acc);
-        Serial.println("Accel delta v filtered: " + String(deltaV_ewma.getAvg(), 3));
+        //Serial.println("Accel delta v filtered: " + String(deltaV_ewma.getAvg(), 3));
 
         velocityFilter.updateDelta(deltaV_ewma.getAvg());
-        Serial.print("Filtered vel: "); Serial.println(velocityFilter.getVal(), 5);
+        //Serial.print("Filtered vel: "); Serial.println(velocityFilter.getVal(), 5);
 
         lastMagReadingTime = magData.getLastUpdated();
     }
@@ -40,10 +40,10 @@ State *CoastWait::loop_impl() {
                         (baroData.getLastUpdated() - lastBaroReadingTime) / 1000.);
             velocityFilter.updateAbsolute(ewma.getAvg());
 
-            Serial.println("Baro vel: " + String((baroData->altitude - prevAltitude) *
-                        (baroData.getLastUpdated() - lastBaroReadingTime) / 1000., 3));
+            //Serial.println("Baro vel: " + String((baroData->altitude - prevAltitude) *
+            //            (baroData.getLastUpdated() - lastBaroReadingTime) / 1000., 3));
 
-            Serial.print("Filtered vel: "); Serial.println(velocityFilter.getVal(), 5);
+            //Serial.print("Filtered vel: "); Serial.println(velocityFilter.getVal(), 5);
         }
 
         prevAltitude = baroData->altitude;

@@ -23,3 +23,7 @@ float AirbrakeController::deployAmount(float acc_z, float v_z, float alt) {
         return (new_deploy >= 1 ? 1 : new_deploy);
     }
 }
+
+float AirbrakeController::constantDeploy() {
+    return CONSTANT_DEPLOY;
+}

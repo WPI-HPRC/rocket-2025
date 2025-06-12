@@ -24,6 +24,5 @@ State *PreLaunch::loop_impl() {
         }
     }
 
-    if (currentTime >= 1000) return new CoastWait(ctx);
     return nullptr;
 }

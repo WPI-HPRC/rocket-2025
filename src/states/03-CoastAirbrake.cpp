@@ -49,9 +49,13 @@ State *CoastAirbrake::loop_impl() {
     }
 
     // compute brake
-    float deploy = ctx->airbrakes.deployAmount(acc_z_best, velocityFilter.getVal(), alt_best);
+    //float deploy = ctx->airbrakes.deployAmount(acc_z_best, velocityFilter.getVal(), alt_best);
     
     // deploy brake
+    //ctx->airbrakes.write(SERVO_MIN + (deploy * (SERVO_MAX - SERVO_MIN)));
+
+    // will use this instead
+    float deploy = ctx->airbrakes.constantDeploy();
     ctx->airbrakes.write(SERVO_MIN + (deploy * (SERVO_MAX - SERVO_MIN)));
 
     if (currentTime >= COAST_AIRBRAKE_TIME) {
