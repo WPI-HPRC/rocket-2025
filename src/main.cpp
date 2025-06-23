@@ -7,6 +7,7 @@
 #include "boilerplate/Sensors/Sensor/Sensor.h"
 #include "boilerplate/StateEstimator/AttEkf.h"
 #include "boilerplate/StateEstimator/PVKF.h"
+#include "boilerplate/Utilities/QuaternionUtils.h"
 #include "boilerplate/Utilities/SDSerialInterface.h"
 #include "states/States.h"
 #include <SPI.h>
@@ -132,7 +133,6 @@ void setup() {
     // while (!Serial)
     //     delay(5);
 
-    stateMachine.initialize();
     sensorManager.sensorInit();
 
     Wire.setClock(400000);
@@ -185,6 +185,8 @@ void setup() {
 
     looper.init();
     lowPrioLooper.init();
+
+    stateMachine.initialize();
 
     IWatchdog.begin(4000000);
 }
@@ -288,6 +290,9 @@ void EKFLoop() {
 }
 
 void loggingLoop() {
+    // const auto fwd = QuaternionUtils::getForwardVector(rotInv);
+    // Serial.println(std::acos(-fwd(2)) * RAD_TO_DEG);
+    return;
     if (ctx.flightMode) return;
     
     static bool ledState = true;
@@ -308,4 +313,43 @@ void loggingLoop() {
 
 void occasionalLoop() { ctx.logFile.flush(); ctx.errorLogFile.flush(); }
 
-void loop() { handleSDInterface(&ctx); IWatchdog.reload(); }
+void loop() {
+    // static uint32_t lastDataRead = 0;
+    // constexpr size_t N = 1000;
+    // static float x[N], y[N], z[N], avgX = 0, avgY = 0, avgZ = 0, bX, bY, bZ;
+    // const static auto data = ctx.mag.getData();
+    // static size_t i = 0;
+
+    // sensorManager.loop();
+
+    // if (lastDataRead < data.getLastUpdated()) {
+    //     x[i] = data->accelX;
+    //     avgX += x[i];
+    //     y[i] = data->accelY;
+    //     avgY += y[i];
+    //     z[i] = data->accelZ;
+    //     avgZ += z[i];
+    //     lastDataRead = data.getLastUpdated();
+
+    //     i++;
+    // }
+
+    // if (i == N) {
+    //     avgX /= N;
+    //     avgY /= N;
+    //     avgZ /= N;
+
+    //     for (size_t j = 0; j < N; j++) {
+    //         bX += (x[j] - avgX) * (x[j] - avgX);
+    //         bY += (y[j] - avgY) * (y[j] - avgY);
+    //         bZ += (z[j] - avgZ) * (z[j] - avgZ);
+    //     }
+    //     bX /= N - 1;
+    //     bY /= N - 1;
+    //     bZ /= N - 1;
+
+    //     Serial.println(String(bX, 10) + ", " + String(bY, 10) + ", " + String(bZ, 10));
+    //     while (true) delay(5);
+    // }
+    handleSDInterface(&ctx); IWatchdog.reload();
+}

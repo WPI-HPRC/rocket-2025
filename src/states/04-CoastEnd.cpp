@@ -1,12 +1,11 @@
+#include "FlightParams.h"
 #include "States.h"
 
-void Coast::initialize_impl() {
+void CoastEnd::initialize_impl() {
   prevAltitude = this->ctx->baro.getData()->altitude;
 }
 
-State *Coast::loop_impl() {
-  // FIXME: Some sort of active airbrake control here
-
+State *CoastEnd::loop_impl() {
   const auto baroData = ctx->baro.getData();
 
   if (lastBaroReadingTime != baroData.getLastUpdated()) {
@@ -18,7 +17,7 @@ State *Coast::loop_impl() {
     }
   }
 
-  if (this->currentTime >= COAST_MAX_TIME) {
+  if (this->currentTime >= COAST_MAX_TIME - WAIT_AFTER_BURNOUT - COAST_AIRBRAKE_TIME) {
     ctx->errorLogFile.printf("[%d] Coast state timed out\n", ::millis());
     return new DrogueDescent(this->ctx);
   }

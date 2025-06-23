@@ -10,11 +10,11 @@ State *Boost::loop_impl() {
         // negative z acceleration due to drag which is larger in magnitude than the
         // threshhold
         if (accelDebouncer.update(accelData->accelZ < BURNOUT_THRESHHOLD, ::millis())) {
-            return new Coast(this->ctx);
+            return new CoastWait(this->ctx);
         }
         if (this->currentTime >= BOOST_MAX_TIME) {
             ctx->errorLogFile.printf("[%d] Boost state timed out\n", ::millis());
-            return new Coast(this->ctx);
+            return new CoastWait(this->ctx);
         }
     }
     // FIXME: possible Abort transition here (or flag to say no airbrakes)

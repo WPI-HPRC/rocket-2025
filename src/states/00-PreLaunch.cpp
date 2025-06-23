@@ -23,5 +23,6 @@ State *PreLaunch::loop_impl() {
             ctx->errorLogFile.printf("[%u] Initial altitude: %f m\n", ::millis(), ctx->initialAltitude);
         }
     }
+
     return nullptr;
 }
