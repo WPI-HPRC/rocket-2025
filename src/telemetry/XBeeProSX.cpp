@@ -3,7 +3,7 @@
 #include "Packet.pb.h"
 #include "Telemetry.pb.h"
 #include "XBeeProSX.h"
-#include "boilerplate/StateEstimator/AttEkf.h"
+#include "boilerplate/StateEstimator/qmekf.h"
 #include "pb_decode.h"
 #include "pb_encode.h"
 #include "stm32h753xx.h"
@@ -67,17 +67,17 @@ void XbeeProSX::loop() {
         telem_packet->gpsLock = ctx->gps.getData()->gpsLockType == 3;
         telem_packet->gpsAltMSL = ctx->gps.getData()->altMSL;
 
-        telem_packet->w = ctx->attEkfLogger.getState()(AttKFInds::q_w);
-        telem_packet->i = ctx->attEkfLogger.getState()(AttKFInds::q_x);
-        telem_packet->j = ctx->attEkfLogger.getState()(AttKFInds::q_y);
-        telem_packet->k = ctx->attEkfLogger.getState()(AttKFInds::q_z);
+        telem_packet->w = ctx->qmekfLogger.getState()(QMEKFInds::q_w);
+        telem_packet->i = ctx->qmekfLogger.getState()(QMEKFInds::q_x);
+        telem_packet->j = ctx->qmekfLogger.getState()(QMEKFInds::q_y);
+        telem_packet->k = ctx->qmekfLogger.getState()(QMEKFInds::q_z);
 
-        telem_packet->posX = ctx->pvKFLogger.getState()(0);
-        telem_packet->posY = ctx->pvKFLogger.getState()(1);
-        telem_packet->posZ = ctx->pvKFLogger.getState()(2);
-        telem_packet->velX = ctx->pvKFLogger.getState()(3);
-        telem_packet->velY = ctx->pvKFLogger.getState()(4);
-        telem_packet->velZ = ctx->pvKFLogger.getState()(5);
+        telem_packet->posX = ctx->qmekfLogger.getState()(QMEKFInds::p_x);
+        telem_packet->posY = ctx->qmekfLogger.getState()(QMEKFInds::p_y);
+        telem_packet->posZ = ctx->qmekfLogger.getState()(QMEKFInds::p_z);
+        telem_packet->velX = ctx->qmekfLogger.getState()(QMEKFInds::v_x);
+        telem_packet->velY = ctx->qmekfLogger.getState()(QMEKFInds::v_y);
+        telem_packet->velZ = ctx->qmekfLogger.getState()(QMEKFInds::v_z);
 
         // Send packet
 

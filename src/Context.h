@@ -2,8 +2,7 @@
 
 #include "BasicLinearAlgebra.h"
 #include "airbrakes/AirbrakeController.h"
-#include "boilerplate/StateEstimator/AttEkf.h"
-#include "boilerplate/StateEstimator/PVKF.h"
+#include "boilerplate/StateEstimator/qmekf.h"
 #include "config.h"
 
 struct Context {
@@ -23,8 +22,7 @@ struct Context {
     File errorLogFile;
     bool flightMode;
     uint32_t xbeeLoggingDelay;
-    AttEkfLogger attEkfLogger;
-    PVEkfLogger pvKFLogger;
+    QMEKFLogger qmekfLogger;
     float initialAltitude;
 
     void logCsvHeader() {
@@ -37,9 +35,7 @@ struct Context {
         logFile.print(",");
         gps.logCsvHeader(logFile);
         logFile.print(",");
-        attEkfLogger.logCsvHeader(logFile);
-        logFile.print(",");
-        pvKFLogger.logCsvHeader(logFile);
+        qmekfLogger.logCsvHeader(logFile);
         logFile.print(",airbrakeServo");
         logFile.println();
     }
