@@ -5,8 +5,7 @@
 #include "airbrakes/AirbrakeController.h"
 #include "boilerplate/Looper/Looper.h"
 #include "boilerplate/Sensors/Sensor/Sensor.h"
-#include "boilerplate/StateEstimator/AttEkf.h"
-#include "boilerplate/StateEstimator/PVKF.h"
+#include "boilerplate/StateEstimator/qmekf.h"
 #include "boilerplate/Utilities/SDSerialInterface.h"
 #include "states/States.h"
 #include <SPI.h>
@@ -40,8 +39,7 @@ Context ctx = {
     .airbrakes = AirbrakeController(AIRBRAKE_SERVO_PIN, AIRBRAKE_FEEDBACK_PIN),
     .flightMode = false,
     .xbeeLoggingDelay = 50,
-    .attEkfLogger = AttEkfLogger(),
-    .pvKFLogger = PVEkfLogger(),
+    .qmekfLogger = QMEKFLogger(),
 };
 
 XbeeProSX xbee = XbeeProSX(&ctx, XBEE_CS, XBEE_ATTN, GROUNDSTATION_XBEE_ADDRESS,
@@ -53,9 +51,7 @@ SensorManager sensorManager(sensors, millis);
 
 StateMachine stateMachine((State *)new PreLaunch(&ctx));
 
-AttStateEstimator quatEkf(ctx.mag.getData(), 0.025);
-PVStateEstimator pvKF(ctx.baro.getData(), ctx.mag.getData(), ctx.gps.getData(), 0.025);
-
+StateEstimator qmekf(ctx.mag.getData(), ctx.baro.getData(), ctx.gps.getData(), 0.025);
 bool sd_initialized = false;
 
 // Outputs the bits in the byte `data` in MSB order over `pin`
@@ -207,8 +203,6 @@ void mainLoop() {
     static uint32_t lastMagDataLogged = 0;
     static uint32_t lastGpsDataLogged = 0;
     static uint32_t lastAttKfDataLogged = 0;
-    static uint32_t lastPVKfDataLogged = 0;
-
 #if defined(MARS)
     digitalWrite(PE0, digitalRead(PA3));
     digitalWrite(PE1, digitalRead(PC4));
@@ -238,12 +232,9 @@ void mainLoop() {
         ctx.logFile.print(",");
 
         lastAttKfDataLogged =
-            ctx.attEkfLogger.logCsvRow(ctx.logFile, lastAttKfDataLogged);
+            ctx.qmekfLogger.logCsvRow(ctx.logFile, lastAttKfDataLogged);
         ctx.logFile.print(",");
 
-        lastPVKfDataLogged =
-            ctx.pvKFLogger.logCsvRow(ctx.logFile, lastPVKfDataLogged);
-        ctx.logFile.print(",");
 
         ctx.logFile.print(ctx.airbrakes.read());
         ctx.logFile.println();
@@ -255,35 +246,22 @@ void xbeeLoop() { xbee.loop(); }
 void EKFLoop() {
     static TimedPointer<MAX10SData> gpsData = ctx.gps.getData();
     static TimedPointer<LPS22Data> baroData = ctx.baro.getData();
-    static bool attEkfInitialized = false;
-    static bool pvInitialized = false;
+    static bool qmekfInitialized = false;
 
-    if (attEkfInitialized && !pvInitialized &&
-        (gpsData->gpsLockType == 3 || gpsData->gpsLockType == 2)) {
-        BLA::Matrix<6, 1> initialPV = {(float)gpsData->lat, (float)gpsData->lon, baroData->altitude, 0, 0, 0};
-        pvKF.init(initialPV, ctx.attEkfLogger.getState());
-        pvInitialized = true;
+    if (!qmekfInitialized && (gpsData->gpsLockType == 3 || gpsData->gpsLockType == 2)) {
+        BLA::Matrix<3, 1> LLA = {(float)gpsData->lat, (float)gpsData->lon, baroData->altitude}
+        qmekf.init(LLA);
+        qmekfInitialized = true;
     }
 
-    if (!attEkfInitialized) {
-        quatEkf.init();
-        attEkfInitialized = true;
-    }
+    auto x = qmekf.onLoop(stateMachine.getCurrentStateId() == ID_PreLaunch);
 
-    auto x = quatEkf.onLoop(stateMachine.getCurrentStateId() == ID_PreLaunch);
-
-    if (pvInitialized) {
-        auto pv = pvKF.onLoop();
-        noInterrupts();
-        ctx.pvKFLogger.newState(pv);
-        interrupts();
-    }
 
     // disabling interrupts here may not be necessary, but it guarantees we
     // don't read context from the high priority interrupt in an invalid state,
     // since that one can preempt this one.
     noInterrupts();
-    ctx.attEkfLogger.newState(x);
+    ctx.qmekfLogger.newState(x);
     interrupts();
 }
 
@@ -297,8 +275,7 @@ void loggingLoop() {
     ctx.baro.debugLog(Serial);
     ctx.gps.debugLog(Serial);
     ctx.mag.debugLog(Serial);
-    ctx.attEkfLogger.debugLog(Serial);
-    ctx.pvKFLogger.debugLog(Serial);
+    ctx.qmekfLogger.debugLog(Serial);
 
     if (sd_initialized && ctx.logFile) {
         ledState = !ledState;
